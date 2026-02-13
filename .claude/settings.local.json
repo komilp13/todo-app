@@ -9,7 +9,8 @@
       "Bash(dotnet ef dbcontext:*)",
       "Bash(dotnet tool install:*)",
       "Bash(dotnet tool:*)",
-      "Bash(dotnet-ef dbcontext info:*)"
+      "Bash(dotnet-ef dbcontext info:*)",
+      "Bash(dotnet-ef migrations add:*)"
     ]
   }
 }

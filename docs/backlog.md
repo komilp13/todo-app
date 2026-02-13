@@ -122,6 +122,7 @@ Build a multi-user, web-based GTD (Getting Things Done) todo application similar
 ---
 
 #### Story 1.2.3: Create Initial Database Migration — `3 SP`
+- [x] **COMPLETED**
 
 **Description:** Generate the initial EF Core migration creating all tables, indexes, constraints, and relationships. Validate it applies cleanly to a fresh PostgreSQL database.
 
