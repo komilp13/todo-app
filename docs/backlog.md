@@ -185,6 +185,7 @@ Build a multi-user, web-based GTD (Getting Things Done) todo application similar
 ---
 
 #### Story 1.3.2: Set Up API Client and Type Definitions — `5 SP`
+- [x] **COMPLETED**
 
 **Description:** Create a centralized API client module handling base URL, JWT bearer token injection, request/response interceptors, and error handling. Define TypeScript interfaces mirroring backend models.
 
