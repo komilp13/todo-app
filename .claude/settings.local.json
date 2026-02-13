@@ -5,7 +5,11 @@
       "Bash(dotnet sln:*)",
       "Bash(dotnet add:*)",
       "Bash(dotnet build:*)",
-      "Bash(dotnet test:*)"
+      "Bash(dotnet test:*)",
+      "Bash(dotnet ef dbcontext:*)",
+      "Bash(dotnet tool install:*)",
+      "Bash(dotnet tool:*)",
+      "Bash(dotnet-ef dbcontext info:*)"
     ]
   }
 }

@@ -91,6 +91,7 @@ Build a multi-user, web-based GTD (Getting Things Done) todo application similar
 ---
 
 #### Story 1.2.1: Configure EF Core with PostgreSQL Provider — `3 SP`
+- [x] **COMPLETED**
 
 **Description:** Install and configure Entity Framework Core with the Npgsql provider in `TodoApp.Infrastructure`. Create `ApplicationDbContext`, configure the connection string in appsettings, and register DbContext in DI.
 

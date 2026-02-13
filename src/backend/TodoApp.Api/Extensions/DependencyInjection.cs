@@ -1,3 +1,6 @@
+using Microsoft.EntityFrameworkCore;
+using TodoApp.Infrastructure.Persistence;
+
 namespace TodoApp.Api.Extensions;
 
 /// <summary>
@@ -16,10 +19,16 @@ public static class DependencyInjection
     }
 
     /// <summary>
-    /// Registers infrastructure layer services.
+    /// Registers infrastructure layer services including database context.
     /// </summary>
-    public static IServiceCollection AddInfrastructureServices(this IServiceCollection services)
+    public static IServiceCollection AddInfrastructureServices(this IServiceCollection services, IConfiguration configuration)
     {
+        // Register DbContext
+        var connectionString = configuration.GetConnectionString("DefaultConnection");
+        services.AddDbContext<ApplicationDbContext>(options =>
+            options.UseNpgsql(connectionString)
+        );
+
         // Register infrastructure services here
         // Example: services.AddScoped<IUserRepository, UserRepository>();
         return services;
