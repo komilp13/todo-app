@@ -33,6 +33,33 @@ dotnet ef database update --project TodoApp.Api --startup-project TodoApp.Api
 
 This creates the database and applies all migrations.
 
+### Development Seed Data
+
+In Development environment, the database is automatically populated with test data on first run:
+
+**Test User Credentials:**
+
+- **User 1**
+  - Email: `alice@example.com`
+  - Password Hash: `hashed_password_1` (placeholder - use password hashing service in actual login)
+  - Display Name: Alice Johnson
+
+- **User 2**
+  - Email: `bob@example.com`
+  - Password Hash: `hashed_password_2` (placeholder - use password hashing service in actual login)
+  - Display Name: Bob Smith
+
+**Seed Data Includes:**
+
+- 18+ tasks distributed across all GTD system lists (Inbox, Next, Upcoming, Someday)
+- 2 projects (Q1 Goals, Website Redesign)
+- 4 labels (Work, Personal, Urgent, Reading)
+- Varying priorities (P1-P4) and due dates
+- 2 completed/archived tasks
+- Task-label relationships for filtering
+
+The seed data is **idempotent** — running the application multiple times won't create duplicates. Seeding only occurs if the Users table is empty.
+
 ### Option 2: From Scratch with Docker
 
 If using Docker Compose (see `docker-compose.yml`):

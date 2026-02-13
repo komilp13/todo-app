@@ -1,6 +1,8 @@
 using TodoApp.Api.Endpoints;
 using TodoApp.Api.Extensions;
 using TodoApp.Api.Middleware;
+using TodoApp.Infrastructure.Persistence;
+using TodoApp.Infrastructure.Persistence.Seed;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -20,6 +22,21 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+
+    // Seed development data (skip if database is not available)
+    try
+    {
+        using (var scope = app.Services.CreateScope())
+        {
+            var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            await ApplicationDbContextSeeder.SeedAsync(dbContext);
+        }
+    }
+    catch (Exception ex)
+    {
+        // Log and continue - database might not be available in test environments
+        System.Diagnostics.Debug.WriteLine($"Seed data skipped: {ex.Message}");
+    }
 }
 
 app.UseHttpsRedirection();

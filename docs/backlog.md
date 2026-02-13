@@ -137,6 +137,7 @@ Build a multi-user, web-based GTD (Getting Things Done) todo application similar
 ---
 
 #### Story 1.2.4: Create Development Seed Data — `5 SP`
+- [x] **COMPLETED**
 
 **Description:** Create a data seeding mechanism populating the database with realistic test data in Development environment: sample users, tasks across all system lists, projects with tasks, and labels.
 
