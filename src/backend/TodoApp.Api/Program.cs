@@ -29,3 +29,6 @@ app.UseCors("AllowFrontend");
 app.MapHealthEndpoints();
 
 app.Run();
+
+// Make Program public for WebApplicationFactory in integration tests
+public partial class Program { }

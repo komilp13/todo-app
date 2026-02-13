@@ -63,6 +63,7 @@ Build a multi-user, web-based GTD (Getting Things Done) todo application similar
 ---
 
 #### Story 1.1.3: Set Up Unit and Integration Test Projects — `5 SP`
+- [x] **COMPLETED**
 
 **Description:** Add test projects: `TodoApp.UnitTests` (xUnit, for testing services and domain logic) and `TodoApp.IntegrationTests` (xUnit with WebApplicationFactory, for testing API endpoints). Configure test conventions and a base test class.
 
