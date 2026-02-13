@@ -174,6 +174,7 @@ After generating, complete:
 4. Run `/test-slice {UseCaseName}` to test
 5. Run `/check-architecture` to validate design
 6. Implement controller endpoint
+7. Run `/next-story` when complete to mark story done and get next recommendation
 
 ## Notes
 

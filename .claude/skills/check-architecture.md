@@ -442,6 +442,7 @@ public TasksController(ITaskRepository repo)
 3. Fix violations manually or use `--fix` flag
 4. Re-run to verify
 5. Commit with confidence
+6. Run `/next-story` to mark current story complete and get next recommendation
 
 ## Notes
 

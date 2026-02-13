@@ -12,6 +12,7 @@ This guide documents all custom skills and agents available for this project. Th
 | **check-architecture** | Skill | Validate architecture compliance | `/check-architecture` |
 | **api-client-gen** | Skill | Generate frontend API client | `/api-client-gen Tasks` |
 | **seed-data-gen** | Skill | Generate development seed data | `/seed-data-gen` |
+| **next-story** | Skill | Track story status and recommend next | `/next-story` |
 | **Domain Modeling** | Agent | Design domain entities | Use Task tool with `subagent_type=general-purpose` |
 | **API Contract** | Agent | Review API design | Use Task tool with `subagent_type=Explore` |
 | **Test Strategy** | Agent | Design test approach | Use Task tool with `subagent_type=general-purpose` |
@@ -274,6 +275,100 @@ To apply seed data:
 
 ℹ Seed data is idempotent (safe to run multiple times)
 ```
+
+---
+
+### 7. next-story — Story Tracking and Workflow Manager
+
+**Location**: `/.claude/skills/next-story.md`
+
+**Purpose**: Track story completion status in the product backlog and recommend the next story to work on. Enforces single-active-story discipline to maintain focus.
+
+**When to use**: At the start of each work session to know what to work on, or when completing a story to track progress and get next recommendation
+
+**How to invoke**:
+```
+/next-story
+```
+
+**What it does**:
+1. Scans `docs/backlog.md` for story status markers
+2. Reviews any stories marked "In Progress" [~]:
+   - If multiple active: Prompts to review and close completed work
+   - If one active: Asks if it's done
+   - If none: Skips to next story
+3. Finds next incomplete story (sorted by story ID)
+4. Marks it as "In Progress" [~]
+5. Displays full story details (acceptance criteria, description, points)
+6. Shows progress summary (completion %, remaining sprints)
+
+**Status Markers in Backlog**:
+- `[ ]` — Not Started (default)
+- `[~]` — In Progress (only one at a time)
+- `[x]` — Completed
+- `[-]` — Abandoned/Skipped
+
+**Expected output**:
+```
+Scanning backlog: docs/backlog.md
+Active Stories: 0
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Next Story Recommendation
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Story 1.1.1: Initialize ASP.NET Core Web API Solution
+Points: 5 SP
+Epic: 1. Project Infrastructure & Setup
+Feature: 1.1. Backend Project Scaffolding
+
+Description: [Full description...]
+Acceptance Criteria:
+  - Solution file TodoApp.sln exists at /src/backend/TodoApp.sln
+  - Four projects exist with proper references
+  - [... more criteria ...]
+
+✓ Marked Story 1.1.1 as in progress [~]
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Progress Summary
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Total Stories: 54
+Completed: 0 (0%)
+In Progress: 1 (2%)
+
+Total Points: 287 SP
+Remaining: 287 SP (100%)
+
+Estimated: ~9.6 sprints at 30 SP/sprint
+```
+
+**Typical Workflow**:
+```
+1. /next-story
+   → Recommends Story 1.1.1, marks as [~]
+
+2. /scaffold-slice CreateTask command
+   → Generate boilerplate for the feature
+
+3. Implement handler logic, write tests
+
+4. /test-slice CreateTask
+   → Verify tests pass
+
+5. /check-architecture
+   → Validate clean architecture
+
+6. /next-story (again)
+   → "Is Story 1.1.1 complete?" → Answer: Yes
+   → Marks as [x], recommends Story 1.1.2
+
+7. Repeat
+```
+
+**Single Active Story Rule**:
+This skill enforces one story active at a time to maintain focus and prevent context-switching. If multiple stories are marked [~], the skill prompts you to review each and close completed work before proceeding.
 
 ---
 

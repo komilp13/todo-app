@@ -80,9 +80,38 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
   /src/types           # TypeScript interfaces
   package.json
 
-docker-compose.yml      # Local dev environment
-.github/workflows/ci.yml # CI pipeline
+docker-compose.yml          # Local dev environment
+.env.example                # Environment variable template
+.github/workflows/ci.yml     # CI pipeline
+.claude/                     # Custom Claude Code resources
+  /agents/                   # AI advisor agents (domain modeling, testing, security, etc.)
+  /skills/                   # Automated skills (scaffolding, migrations, testing, etc.)
+  /README.md                 # Guide to custom resources
+SKILLS_AND_AGENTS.md         # Detailed documentation of all helpers
 ```
+
+## Custom Skills & Agents
+
+This repository includes custom Claude Code **skills** and **agents** (defined in `/.claude/`) to accelerate development:
+
+**Skills** (automated helpers for common tasks):
+- `/scaffold-slice` — Generate boilerplate for new vertical slices (command/query + handler + validator + tests)
+- `/add-migration` — Create and apply EF Core migrations safely
+- `/test-slice` — Run tests for a specific feature slice
+- `/check-architecture` — Validate Clean Architecture compliance and identify violations
+- `/api-client-gen` — Generate TypeScript interfaces and API client from backend DTOs
+- `/seed-data-gen` — Generate realistic development seed data
+
+**Agents** (specialized advisors for complex decisions):
+- Domain Modeling — Design entities, aggregates, and value objects
+- API Contract — Review endpoint design (DTOs, validation, status codes)
+- Test Strategy — Plan comprehensive test approaches
+- Database Query Optimization — Optimize complex queries and identify N+1 problems
+- Frontend Component Architecture — Design component hierarchy and state flow
+- Security Review — Audit authentication, authorization, and vulnerabilities
+- Integration Test — Write end-to-end test scenarios
+
+See [SKILLS_AND_AGENTS.md](SKILLS_AND_AGENTS.md) for detailed documentation.
 
 ## Key Architectural Decisions
 
@@ -94,24 +123,52 @@ docker-compose.yml      # Local dev environment
    - Tasks explicitly in the Upcoming system list
 5. **JWT Stateless Auth**: No server-side sessions. JWT tokens validated per request via ASP.NET Core middleware. Passwords hashed with PBKDF2 (100k+ iterations) + salt.
 
+## Quick Start: Scaffolding a New Feature
+
+For fastest development, use the custom scaffolding skill:
+
+```bash
+# Example: Create a new "CreateTask" command
+/scaffold-slice CreateTask command
+
+# This generates:
+# - CreateTaskCommand.cs, CreateTaskCommandValidator.cs, CreateTaskResponse.cs
+# - CreateTaskHandler.cs with boilerplate logic
+# - Unit test template (CreateTaskHandlerTests.cs)
+# - DI registration in Program.cs
+
+# Then test your implementation:
+/test-slice CreateTask
+
+# And check architecture compliance:
+/check-architecture
+```
+
+See [SKILLS_AND_AGENTS.md](SKILLS_AND_AGENTS.md) for all available helpers.
+
 ## Common Development Commands
 
 ### Backend (.NET / C#)
 
 ```bash
-# From /src/backend
-dotnet build                    # Build solution
-dotnet test                     # Run all unit + integration tests
-dotnet test --filter "ClassName" # Run specific test class
-dotnet watch test               # Auto-rebuild and test on file changes
+# From /src/backend directory
+dotnet build                      # Build solution
+dotnet test                       # Run all unit + integration tests
+dotnet test --filter "CreateTask" # Run tests for specific feature
+dotnet watch test                 # Auto-rebuild and test on changes
+dotnet run                        # Start API (http://localhost:5000)
 
-# Running locally (requires PostgreSQL)
-dotnet run                      # Start API (typically http://localhost:5000)
-
-# Database/Migrations (from solution root)
+# Database & Migrations
+# Run from /src/backend directory
 dotnet ef migrations add MigrationName -p TodoApp.Infrastructure -s TodoApp.Api
-dotnet ef database update       # Apply pending migrations
-dotnet ef database drop         # Drop database (dev only)
+dotnet ef database update         # Apply pending migrations
+dotnet ef database drop           # Drop database (dev only)
+
+# Custom scaffolding (run from repo root)
+/scaffold-slice FeatureName command   # Generate vertical slice boilerplate
+/add-migration MigrationName          # Create EF migration
+/check-architecture                   # Validate Clean Architecture compliance
+/api-client-gen Tasks                 # Generate TypeScript API client
 ```
 
 ### Frontend (Next.js)
@@ -338,20 +395,72 @@ public class TodoTask
 - **CORS Configuration**: Allows frontend origin
 - **Health Check Endpoint**: `GET /api/health` — shared across all slices
 
-## Configuration & Environment
+## Configuration & Environment Setup
+
+### Environment Variables
+
+Create a `.env` file (or `.env.local` for local overrides) from `.env.example`:
+
+```bash
+cp .env.example .env
+```
 
 **Backend** (`appsettings.json` / `appsettings.Development.json`):
-- `ConnectionStrings:DefaultConnection` — PostgreSQL connection string
-- `Jwt:SecretKey` — Signing key (min 256 bits)
-- `Jwt:Issuer`, `Jwt:Audience`, `Jwt:ExpirationMinutes` — Token config
-- `Cors:AllowedOrigins` — Frontend origin (e.g., http://localhost:3000)
+- `ConnectionStrings:DefaultConnection` — PostgreSQL connection string (e.g., `Server=localhost;Database=todo_app;User Id=postgres;Password=...`)
+- `Jwt:SecretKey` — Signing key (min 256 bits; generate with `openssl rand -base64 32`)
+- `Jwt:Issuer` — Token issuer (e.g., "TodoApp")
+- `Jwt:Audience` — Token audience (e.g., "TodoApp.Client")
+- `Jwt:ExpirationMinutes` — Token expiration (e.g., 1440 = 24 hours)
+- `Cors:AllowedOrigins` — Frontend origin(s), comma-separated (e.g., `http://localhost:3000,https://yourdomain.com`)
+- `ASPNETCORE_ENVIRONMENT` — Set to `Development`, `Staging`, or `Production`
 
-**Frontend** (`Next.js env`):
-- `NEXT_PUBLIC_API_URL` — Backend base URL (e.g., http://localhost:5000)
+**Frontend** (`.env.local` / `.env.development.local`):
+- `NEXT_PUBLIC_API_URL` — Backend base URL (e.g., `http://localhost:5000`)
+- `NEXT_PUBLIC_APP_NAME` — App name for UI (e.g., "GTD Todo")
 
-**Docker Compose**:
-- Uses `.env.example` to document all required environment variables
-- Auto-seeds development database with test users and sample data
+**Docker Compose** (`.env` file in repo root):
+- Uses `.env.example` to document all required variables
+- Automatically configures PostgreSQL, backend, and frontend services
+- Seed data is applied automatically on first `docker-compose up`
+
+### Local Development Setup
+
+```bash
+# 1. Clone repository and install dependencies
+git clone <repo-url>
+cd todo-app
+cp .env.example .env
+
+# 2a. Option A: Use Docker (recommended)
+docker-compose up
+# Frontend: http://localhost:3000
+# Backend API: http://localhost:5000
+# Swagger: http://localhost:5000/swagger
+
+# 2b. Option B: Manual setup (requires PostgreSQL 15+ locally)
+# Backend
+cd src/backend
+dotnet restore
+dotnet ef database update  # Apply migrations
+dotnet run
+
+# Frontend (in another terminal)
+cd src/frontend
+npm install
+npm run dev
+```
+
+### Quick Configuration Check
+
+Verify your setup works:
+
+```bash
+# Backend health check
+curl http://localhost:5000/api/health
+
+# Frontend loads
+open http://localhost:3000  # Should show login page
+```
 
 ## Development Workflow
 
@@ -478,12 +587,54 @@ public class TodoTask
 - **Next.js Docs**: https://nextjs.org/docs
 - **Tailwind CSS**: https://tailwindcss.com/
 
+## Getting Started with Implementation
+
+When you're ready to start building features, here's the recommended flow:
+
+1. **Read the relevant epic/story** in [docs/backlog.md](docs/backlog.md) to understand acceptance criteria
+2. **Design the domain model** — Use the "Domain Modeling Agent" for complex entities
+3. **Create the vertical slice** — Run `/scaffold-slice FeatureName command` (or `query` for reads)
+4. **Implement the handler logic** — Add business logic to the generated handler
+5. **Write tests** — Use `/test-slice` to run auto-generated unit tests
+6. **Check architecture** — Run `/check-architecture` before committing
+7. **Database changes** — Use `/add-migration` for schema updates
+
+**Example: Implementing CreateTask**
+
+```bash
+# 1. Scaffold the slice
+/scaffold-slice CreateTask command
+
+# 2. The generator creates:
+#    - CreateTaskCommand.cs (input DTO)
+#    - CreateTaskCommandValidator.cs (validation rules)
+#    - CreateTaskHandler.cs (business logic — implement here!)
+#    - CreateTaskResponse.cs (output DTO)
+#    - CreateTaskHandlerTests.cs (unit test template)
+#    - DI registration in Program.cs
+
+# 3. Implement handler logic in CreateTaskHandler.cs
+
+# 4. Run and verify tests
+/test-slice CreateTask --unit-only
+
+# 5. Run integration tests
+/test-slice CreateTask --integration-only
+
+# 6. Check architecture compliance
+/check-architecture
+
+# 7. Commit and push to trigger CI
+```
+
 ## Notes for Future Development
 
-- **Epic 1 (Infrastructure)** is a prerequisite for all other epics. Scaffold backend and frontend projects, database schema, CI pipeline first.
-- **Epic 2 (Authentication)** must be completed before user-specific features.
-- **Tasks (Epic 4)** are the core feature — invest quality here.
-- **System lists** implement GTD philosophy — ensure filters and views are correct.
-- **Manual sort order** via `SortOrder` is essential for user control; test drag-and-drop thoroughly.
-- **Upcoming view** is special: it's a computed view combining date-driven and manual tasks.
-- **End-to-end testing** is critical — test complete user workflows (register → create tasks → complete → archive).
+- **Epic 1 (Infrastructure)** is a prerequisite for all other epics. Complete basic project scaffolding, database schema, CI pipeline, and test infrastructure before moving to Epic 2.
+- **Epic 2 (Authentication)** must be completed before user-specific features. Focus on secure password hashing (PBKDF2) and JWT token generation.
+- **Tasks (Epic 4)** are the core feature — invest quality in domain modeling, query optimization, and test coverage here.
+- **System lists** implement GTD philosophy — ensure filters (Inbox, Next, Upcoming, Someday) and views are correct per the backlog requirements.
+- **Manual sort order** via `SortOrder` is essential for user control; test drag-and-drop reordering thoroughly with integration tests.
+- **Upcoming view** is special: it's a computed view combining date-driven tasks (due within 14 days) with tasks explicitly assigned to Upcoming; test both paths.
+- **End-to-end testing** is critical — test complete user workflows (register → create task → assign to Next → complete → archive) using integration tests.
+- **Custom skills accelerate development** — Always use `/scaffold-slice` for new features rather than copying existing code; it maintains consistency and includes DI registration.
+- **Architecture validation** — Run `/check-architecture` before every commit to catch dependency flow violations, public setters, or framework leakage into domain layer.

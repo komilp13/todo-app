@@ -33,6 +33,7 @@ Build a multi-user, web-based GTD (Getting Things Done) todo application similar
 ---
 
 #### Story 1.1.1: Initialize ASP.NET Core Web API Solution — `5 SP`
+- [x] **COMPLETED**
 
 **Description:** Create the .NET solution file and project structure under `/src/backend`. The solution should contain four projects: `TodoApp.Api` (controllers, middleware, startup), `TodoApp.Application` (services, DTOs, interfaces), `TodoApp.Domain` (entities, enums, value objects), and `TodoApp.Infrastructure` (EF Core DbContext, repositories, migrations). Configure project references so that dependencies flow inward.
 
@@ -106,11 +107,11 @@ Build a multi-user, web-based GTD (Getting Things Done) todo application similar
 **Description:** Create the core domain entities in `TodoApp.Domain` and corresponding `IEntityTypeConfiguration<T>` classes in `TodoApp.Infrastructure` defining table names, column types, constraints, indexes, and relationships.
 
 **Acceptance Criteria:**
-- **User** entity: `Id` (Guid), `Email` (string, unique), `PasswordHash` (string), `PasswordSalt` (string), `DisplayName` (string), `CreatedAt`, `UpdatedAt`
-- **TodoTask** entity: `Id` (Guid), `Name` (string, required, max 500), `Description` (string, nullable, max 4000), `DueDate` (DateTime, nullable), `Priority` (enum P1-P4, default P4), `Status` (enum Open/Done, default Open), `SystemList` (enum Inbox/Next/Upcoming/Someday, default Inbox), `SortOrder` (int), `ProjectId` (Guid, nullable FK), `UserId` (Guid, FK), `IsArchived` (bool, default false), `CompletedAt` (DateTime, nullable), `CreatedAt`, `UpdatedAt`
-- **Project** entity: `Id` (Guid), `Name` (string, required, max 200), `Description` (string, nullable, max 4000), `DueDate` (DateTime, nullable), `Status` (enum Active/Completed), `UserId` (Guid, FK), `SortOrder` (int), `CreatedAt`, `UpdatedAt`
-- **Label** entity: `Id` (Guid), `Name` (string, required, max 100, unique per user), `Color` (string, nullable), `UserId` (Guid, FK), `CreatedAt`
-- **TaskLabel** join entity: `TaskId` (Guid, FK), `LabelId` (Guid, FK), composite PK
+- **User** entity: `Id` (ULID), `Email` (string, unique), `PasswordHash` (string), `PasswordSalt` (string), `DisplayName` (string), `CreatedAt` (TIMESTAMPTZ), `UpdatedAt` (TIMESTAMPTZ)
+- **TodoTask** entity: `Id` (ULID), `Name` (string, required, max 500), `Description` (string, nullable, max 4000), `DueDate` (DateTime, nullable), `Priority` (enum P1-P4, default P4), `Status` (enum Open/Done, default Open), `SystemList` (enum Inbox/Next/Upcoming/Someday, default Inbox), `SortOrder` (int), `ProjectId` (ULID, nullable FK), `UserId` (ULID, FK), `IsArchived` (bool, default false), `CompletedAt` (DateTime, nullable), `CreatedAt` (TIMESTAMPTZ), `UpdatedAt` (TIMESTAMPTZ)
+- **Project** entity: `Id` (ULID), `Name` (string, required, max 100), `Description` (string, nullable, max 4000), `DueDate` (DateTime, nullable), `Status` (enum Active/Completed), `UserId` (ULID, FK), `SortOrder` (int), `CreatedAt` (TIMESTAMPTZ), `UpdatedAt` (TIMESTAMPTZ)
+- **Label** entity: `Id` (ULID), `Name` (string, required, max 100, unique per user), `Color` (string, nullable), `UserId` (ULID, FK), `CreatedAt` (TIMESTAMPTZ)
+- **TaskLabel** join entity: `TaskId` (ULID, FK), `LabelId` (ULID, FK), composite PK
 - All entity configurations use Fluent API (no data annotations)
 - Indexes on: `TodoTask.UserId`, `TodoTask.ProjectId`, `TodoTask.SystemList`, `TodoTask.Status`, `TodoTask.DueDate`, `Project.UserId`, `Label.UserId`, `User.Email` (unique)
 

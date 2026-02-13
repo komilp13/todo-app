@@ -380,6 +380,7 @@ tasks.Should()
 3. Aim for 80%+ coverage
 4. Use `--coverage` flag before commits
 5. Fix failures immediately; don't commit failing tests
+6. Run `/next-story` when all tests pass to mark story complete and get next recommendation
 
 ## Tips
 
