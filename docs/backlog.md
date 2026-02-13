@@ -106,6 +106,7 @@ Build a multi-user, web-based GTD (Getting Things Done) todo application similar
 ---
 
 #### Story 1.2.2: Create Domain Entities and EF Core Entity Configurations — `8 SP`
+- [x] **COMPLETED**
 
 **Description:** Create the core domain entities in `TodoApp.Domain` and corresponding `IEntityTypeConfiguration<T>` classes in `TodoApp.Infrastructure` defining table names, column types, constraints, indexes, and relationships.
 
