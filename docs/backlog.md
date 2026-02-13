@@ -168,6 +168,7 @@ Build a multi-user, web-based GTD (Getting Things Done) todo application similar
 ---
 
 #### Story 1.3.1: Initialize Next.js Application with TypeScript — `5 SP`
+- [x] **COMPLETED**
 
 **Description:** Create a new Next.js application under `/src/frontend` with TypeScript, App Router, path aliases, folder structure, and Tailwind CSS.
 
