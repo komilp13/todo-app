@@ -48,6 +48,7 @@ Build a multi-user, web-based GTD (Getting Things Done) todo application similar
 ---
 
 #### Story 1.1.2: Configure Dependency Injection and Application Startup — `5 SP`
+- [x] **COMPLETED**
 
 **Description:** Set up the ASP.NET Core dependency injection container in `Program.cs` to register services, repositories, and the DbContext. Configure the middleware pipeline with proper ordering: exception handling, CORS, authentication, authorization, routing, and Swagger. Support environment-based configuration via `appsettings.{Environment}.json`.
 
