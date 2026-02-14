@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import UserAvatar from './UserAvatar';
 
@@ -11,10 +12,11 @@ interface UserProfileMenuProps {
 
 /**
  * UserProfileMenu Component
- * Dropdown menu showing user profile with logout option
+ * Dropdown menu showing user profile with View Profile and logout options
  */
 export default function UserProfileMenu({ displayName, email }: UserProfileMenuProps) {
   const { logout } = useAuth();
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -104,10 +106,35 @@ export default function UserProfileMenu({ displayName, email }: UserProfileMenuP
             <p className="text-xs text-gray-600">{email}</p>
           </div>
 
+          {/* View Profile Button */}
+          <button
+            onClick={() => {
+              setIsOpen(false);
+              router.push('/profile');
+            }}
+            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2"
+            role="menuitem"
+          >
+            <svg
+              className="h-4 w-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+            View Profile
+          </button>
+
           {/* Logout Button */}
           <button
             onClick={handleLogout}
-            className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors flex items-center gap-2 rounded-b-lg"
+            className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors flex items-center gap-2 rounded-b-lg border-t border-gray-100"
             role="menuitem"
           >
             <svg
