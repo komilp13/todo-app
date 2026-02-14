@@ -460,7 +460,7 @@ Build a multi-user, web-based GTD (Getting Things Done) todo application similar
 ---
 
 #### Story 3.1.2: Implement Sidebar Navigation with System Lists — `5 SP`
-- [~] **IN PROGRESS**
+- [x] **COMPLETED**
 
 **Description:** Populate sidebar with Inbox, Next, Upcoming, Someday. Each shows icon, name, and open task count badge. Active list highlighted. Click navigates to list view.
 
