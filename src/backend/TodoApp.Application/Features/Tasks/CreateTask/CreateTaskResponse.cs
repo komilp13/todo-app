@@ -35,7 +35,7 @@ public class CreateTaskResponse
     /// <summary>
     /// Task status (always Open for newly created tasks).
     /// </summary>
-    public TaskStatus Status { get; set; }
+    public Domain.Enums.TaskStatus Status { get; set; }
 
     /// <summary>
     /// GTD system list assignment.

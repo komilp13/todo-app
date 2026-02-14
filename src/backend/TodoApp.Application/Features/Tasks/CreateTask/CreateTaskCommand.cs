@@ -36,4 +36,10 @@ public class CreateTaskCommand
     /// Optional project ID to associate task with a project.
     /// </summary>
     public Guid? ProjectId { get; set; }
+
+    /// <summary>
+    /// User ID of the authenticated user creating the task.
+    /// This is set by the API layer when extracting from JWT claims.
+    /// </summary>
+    public Guid UserId { get; set; }
 }

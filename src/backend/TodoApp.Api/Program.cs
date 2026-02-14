@@ -50,6 +50,7 @@ app.UseAuthorization();
 // Map endpoints
 app.MapHealthEndpoints();
 app.MapAuthEndpoints();
+app.MapTaskEndpoints();
 
 app.Run();
 

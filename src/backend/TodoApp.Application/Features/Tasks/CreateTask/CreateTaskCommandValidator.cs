@@ -38,5 +38,9 @@ public class CreateTaskCommandValidator : AbstractValidator<CreateTaskCommand>
         RuleFor(x => x.ProjectId)
             .NotEmpty().WithMessage("Project ID must be a valid GUID.")
             .When(x => x.ProjectId.HasValue);
+
+        // UserId validation (required, must be set by API layer)
+        RuleFor(x => x.UserId)
+            .NotEmpty().WithMessage("User ID must be set by the API layer.");
     }
 }

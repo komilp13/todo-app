@@ -20,6 +20,9 @@ public static class DependencyInjection
     /// </summary>
     public static IServiceCollection AddApplicationServices(this IServiceCollection services, IConfiguration configuration)
     {
+        // Register HTTP context accessor for extracting user claims (must be singleton)
+        services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+
         // Register password hashing service
         services.AddScoped<IPasswordHashingService, PasswordHashingService>();
 
@@ -45,6 +48,8 @@ public static class DependencyInjection
 
         // Register repositories
         services.AddScoped<IUserRepository, UserRepository>();
+        services.AddScoped<ITaskRepository, TaskRepository>();
+        services.AddScoped<IProjectRepository, ProjectRepository>();
 
         // Register other infrastructure services here
         return services;
