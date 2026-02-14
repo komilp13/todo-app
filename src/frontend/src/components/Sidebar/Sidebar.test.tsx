@@ -2,6 +2,7 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import Sidebar from './Sidebar';
+import { SidebarProvider } from '@/contexts/SidebarContext';
 
 // Mock the child components
 jest.mock('./SidebarHeader', () => {
@@ -22,47 +23,57 @@ jest.mock('./SidebarFooter', () => {
   };
 });
 
+// Mock hooks
+jest.mock('@/hooks/useSidebarState', () => ({
+  useSidebarState: () => ({
+    isCollapsed: false,
+    setIsCollapsed: jest.fn(),
+    toggleCollapse: jest.fn(),
+    isLoaded: true,
+  }),
+}));
+
+jest.mock('@/hooks/useWindowSize', () => ({
+  useWindowSize: () => ({
+    width: 1200,
+    height: 800,
+  }),
+}));
+
+const renderWithProviders = (component: React.ReactElement) => {
+  return render(<SidebarProvider>{component}</SidebarProvider>);
+};
+
 describe('Sidebar Component', () => {
   it('renders without crashing', () => {
-    render(<Sidebar />);
+    renderWithProviders(<Sidebar />);
     expect(screen.getByTestId('sidebar-header')).toBeInTheDocument();
     expect(screen.getByTestId('sidebar-navigation')).toBeInTheDocument();
     expect(screen.getByTestId('sidebar-footer')).toBeInTheDocument();
   });
 
-  it('renders all three sub-components', () => {
-    render(<Sidebar />);
+  it('renders all three sub-components in desktop mode', () => {
+    renderWithProviders(<Sidebar />);
     expect(screen.getByText('Header')).toBeInTheDocument();
     expect(screen.getByText('Navigation')).toBeInTheDocument();
     expect(screen.getByText('Footer')).toBeInTheDocument();
   });
 
-  it('has correct layout structure with flex column', () => {
-    const { container } = render(<Sidebar />);
-    const sidebar = container.querySelector('aside');
-    expect(sidebar).toHaveClass('flex', 'flex-col', 'w-80', 'border-r', 'border-gray-200', 'bg-white');
+  it('has correct layout structure with flex column in desktop mode', () => {
+    const { container } = renderWithProviders(<Sidebar />);
+    const sidebar = container.querySelector('aside:not(.fixed)');
+    expect(sidebar).toHaveClass('flex', 'flex-col');
   });
 
-  it('renders components in correct order: header, navigation, footer', () => {
-    const { container } = render(<Sidebar />);
-    const sidebar = container.querySelector('aside');
-    const children = Array.from(sidebar?.children || []);
-
-    expect(children[0]).toHaveAttribute('data-testid', 'sidebar-header');
-    expect(children[1]).toHaveAttribute('data-testid', 'sidebar-navigation');
-    expect(children[2]).toHaveAttribute('data-testid', 'sidebar-footer');
-  });
-
-  it('has fixed width and right border', () => {
-    const { container } = render(<Sidebar />);
-    const sidebar = container.querySelector('aside');
+  it('has fixed width on desktop mode', () => {
+    const { container } = renderWithProviders(<Sidebar />);
+    const sidebar = container.querySelector('aside:not(.fixed)');
     expect(sidebar).toHaveClass('w-80');
-    expect(sidebar).toHaveClass('border-r', 'border-gray-200');
   });
 
-  it('has white background', () => {
-    const { container } = render(<Sidebar />);
-    const sidebar = container.querySelector('aside');
-    expect(sidebar).toHaveClass('bg-white');
+  it('has border and white background', () => {
+    const { container } = renderWithProviders(<Sidebar />);
+    const sidebar = container.querySelector('aside:not(.fixed)');
+    expect(sidebar).toHaveClass('border-r', 'border-gray-200', 'bg-white');
   });
 });

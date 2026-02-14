@@ -4,12 +4,16 @@ import SystemListItem from './SystemListItem';
 import { useSystemListCounts } from '@/hooks/useSystemListCounts';
 import { SystemList } from '@/types';
 
+interface SidebarNavigationProps {
+  onNavigate?: () => void;
+}
+
 /**
  * SidebarNavigation Component
  * Scrollable navigation area with system lists (Inbox, Next, Upcoming, Someday)
  * Each list shows open task count and highlights active list
  */
-export default function SidebarNavigation() {
+export default function SidebarNavigation({ onNavigate }: SidebarNavigationProps) {
   const { counts, isLoading } = useSystemListCounts();
 
   // Define system lists with their icons
@@ -36,6 +40,7 @@ export default function SidebarNavigation() {
               systemList={list}
               icon={icon}
               count={isLoading ? 0 : counts[list] || 0}
+              onNavigate={onNavigate}
             />
           ))}
         </div>

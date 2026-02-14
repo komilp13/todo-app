@@ -9,6 +9,7 @@ interface SystemListItemProps {
   systemList: SystemList;
   icon: ReactNode;
   count: number;
+  onNavigate?: () => void;
 }
 
 /**
@@ -16,7 +17,7 @@ interface SystemListItemProps {
  * Displays a single system list item (Inbox, Next, Upcoming, Someday)
  * with icon, name, task count badge, and active state
  */
-export default function SystemListItem({ systemList, icon, count }: SystemListItemProps) {
+export default function SystemListItem({ systemList, icon, count, onNavigate }: SystemListItemProps) {
   const pathname = usePathname();
 
   // Determine the route for this system list
@@ -39,7 +40,7 @@ export default function SystemListItem({ systemList, icon, count }: SystemListIt
   const isActive = pathname === route;
 
   return (
-    <Link href={route}>
+    <Link href={route} onClick={onNavigate}>
       <div
         className={`flex items-center justify-between rounded-lg px-3 py-2 transition-colors ${
           isActive

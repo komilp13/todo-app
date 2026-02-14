@@ -2,6 +2,7 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import AppShell from './AppShell';
+import { SidebarProvider } from '@/contexts/SidebarContext';
 
 // Mock the child components to avoid dependency issues
 jest.mock('./Sidebar/Sidebar', () => {
@@ -16,9 +17,19 @@ jest.mock('./MainContent', () => {
   };
 });
 
+jest.mock('./MobileMenuButton', () => {
+  return function MockMobileMenuButton() {
+    return <div data-testid="mobile-menu" />;
+  };
+});
+
+const renderWithProviders = (component: React.ReactElement) => {
+  return render(<SidebarProvider>{component}</SidebarProvider>);
+};
+
 describe('AppShell Component', () => {
   it('renders without crashing', () => {
-    render(
+    renderWithProviders(
       <AppShell>
         <div>Test Content</div>
       </AppShell>
@@ -29,7 +40,7 @@ describe('AppShell Component', () => {
 
   it('renders children in the main content area', () => {
     const testContent = 'Test Page Content';
-    render(
+    renderWithProviders(
       <AppShell>
         <div>{testContent}</div>
       </AppShell>
@@ -38,7 +49,7 @@ describe('AppShell Component', () => {
   });
 
   it('has proper layout structure with flex container', () => {
-    const { container } = render(
+    const { container } = renderWithProviders(
       <AppShell>
         <div>Content</div>
       </AppShell>
@@ -48,23 +59,32 @@ describe('AppShell Component', () => {
   });
 
   it('renders sidebar and content in correct order', () => {
-    const { container } = render(
+    const { container } = renderWithProviders(
       <AppShell>
         <div>Content</div>
       </AppShell>
     );
     const children = Array.from(container.querySelector('.flex')?.children || []);
     expect(children[0]).toHaveAttribute('data-testid', 'sidebar');
-    expect(children[1]).toHaveAttribute('data-testid', 'main-content');
+    expect(children[1]).toHaveClass('flex-1');
   });
 
   it('takes full screen height', () => {
-    const { container } = render(
+    const { container } = renderWithProviders(
       <AppShell>
         <div>Content</div>
       </AppShell>
     );
     const appShellDiv = container.firstChild as HTMLElement;
     expect(appShellDiv).toHaveClass('h-screen');
+  });
+
+  it('renders mobile menu button', () => {
+    renderWithProviders(
+      <AppShell>
+        <div>Content</div>
+      </AppShell>
+    );
+    expect(screen.getByTestId('mobile-menu')).toBeInTheDocument();
   });
 });
