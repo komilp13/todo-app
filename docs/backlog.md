@@ -390,6 +390,7 @@ Build a multi-user, web-based GTD (Getting Things Done) todo application similar
 ---
 
 #### Story 2.2.2: Build Login Page — `3 SP`
+- [x] **COMPLETED**
 
 **Description:** Login page at `/login` with email and password fields. Stores JWT and redirects on success. Generic error on auth failure.
 
