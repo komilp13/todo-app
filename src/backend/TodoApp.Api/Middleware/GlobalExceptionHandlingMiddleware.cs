@@ -17,7 +17,7 @@ public class GlobalExceptionHandlingMiddleware(RequestDelegate next, ILogger<Glo
         }
     }
 
-    private static Task HandleExceptionAsync(HttpContext context, Exception exception, ILogger logger)
+    private static async Task HandleExceptionAsync(HttpContext context, Exception exception, ILogger logger)
     {
         logger.LogError(exception, "An unhandled exception occurred");
 
@@ -34,7 +34,19 @@ public class GlobalExceptionHandlingMiddleware(RequestDelegate next, ILogger<Glo
         };
 
         response.StatusCode = StatusCodes.Status500InternalServerError;
-        return response.WriteAsJsonAsync(errorResponse);
+
+        // Use WriteAsJsonAsync safely without awaiting inside the return statement
+        try
+        {
+            await response.WriteAsJsonAsync(errorResponse);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to write error response");
+            // Fallback: write plain text response
+            response.ContentType = "text/plain";
+            await response.WriteAsync("An internal server error occurred.");
+        }
     }
 }
 

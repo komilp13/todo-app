@@ -33,6 +33,14 @@ public static class TaskEndpoints
             .Produces<GetTasksResponse>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status401Unauthorized);
+
+        group.MapGet("/{id}", GetTaskById)
+            .WithName("GetTaskById")
+            .WithOpenApi()
+            .Produces<TaskItemDto>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces(StatusCodes.Status404NotFound);
     }
 
     private static async Task<IResult> CreateTask(
@@ -138,5 +146,36 @@ public static class TaskEndpoints
         var response = await handler.Handle(query, cancellationToken);
 
         return Results.Ok(response);
+    }
+
+    private static async Task<IResult> GetTaskById(
+        string id,
+        ClaimsPrincipal user,
+        ApplicationDbContext dbContext,
+        CancellationToken cancellationToken)
+    {
+        // Extract user ID from JWT claims
+        var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier);
+        if (userIdClaim == null || !Guid.TryParse(userIdClaim.Value, out var userId))
+        {
+            return Results.Unauthorized();
+        }
+
+        // Validate task ID format
+        if (!Guid.TryParse(id, out var taskId))
+        {
+            return Results.BadRequest(new { errors = new { id = new[] { "Task ID must be a valid GUID." } } });
+        }
+
+        // Execute query
+        var handler = new GetTaskByIdHandler(dbContext);
+        var task = await handler.Handle(taskId, userId, cancellationToken);
+
+        if (task == null)
+        {
+            return Results.NotFound(new { message = "Task not found or does not belong to the authenticated user." });
+        }
+
+        return Results.Ok(task);
     }
 }

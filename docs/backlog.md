@@ -563,6 +563,7 @@ Build a multi-user, web-based GTD (Getting Things Done) todo application similar
 ---
 
 #### Story 4.1.3: Implement Get Single Task Endpoint — `2 SP`
+- [x] **COMPLETED**
 
 **Description:** `GET /api/tasks/{id}` returns full task details with labels and project info.
 
