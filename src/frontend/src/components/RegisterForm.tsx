@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
@@ -9,6 +10,7 @@ import { apiClient } from '@/services/apiClient';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function RegisterForm() {
+  const router = useRouter();
   const { login } = useAuth();
   const [apiError, setApiError] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -36,7 +38,8 @@ export default function RegisterForm() {
       if (response.data && response.data.token) {
         // Use auth context login to store token and fetch user
         await login(response.data.token);
-        // Redirect is handled by middleware
+        // Redirect to Inbox
+        router.push('/inbox');
       }
     } catch (error: any) {
       // Handle different error scenarios

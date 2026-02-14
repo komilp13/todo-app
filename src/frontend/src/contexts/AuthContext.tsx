@@ -70,6 +70,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     validateToken();
   }, [validateToken]);
 
+  // Redirect authenticated users away from auth pages and root
+  useEffect(() => {
+    if (!isLoading && user) {
+      // If user is authenticated, redirect away from auth pages
+      if (pathname === '/login' || pathname === '/register') {
+        router.push('/inbox');
+      }
+      // If user is authenticated and on root path, redirect to Inbox
+      if (pathname === '/') {
+        router.push('/inbox');
+      }
+    }
+  }, [user, isLoading, pathname, router]);
+
   // Login: store token and fetch user data
   const login = useCallback(async (token: string) => {
     localStorage.setItem('authToken', token);
