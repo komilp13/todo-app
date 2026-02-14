@@ -6,6 +6,7 @@ using TodoApp.Application.Configuration;
 using TodoApp.Application.Services;
 using TodoApp.Domain.Interfaces;
 using TodoApp.Infrastructure.Persistence;
+using TodoApp.Infrastructure.Persistence.Repositories;
 
 namespace TodoApp.Api.Extensions;
 
@@ -42,8 +43,10 @@ public static class DependencyInjection
             options.UseNpgsql(connectionString)
         );
 
-        // Register infrastructure services here
-        // Example: services.AddScoped<IUserRepository, UserRepository>();
+        // Register repositories
+        services.AddScoped<IUserRepository, UserRepository>();
+
+        // Register other infrastructure services here
         return services;
     }
 
@@ -108,6 +111,9 @@ public static class DependencyInjection
                 ClockSkew = TimeSpan.Zero
             };
         });
+
+        // Add Authorization service
+        services.AddAuthorization();
 
         return services;
     }

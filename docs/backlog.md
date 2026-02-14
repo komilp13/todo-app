@@ -316,6 +316,7 @@ Build a multi-user, web-based GTD (Getting Things Done) todo application similar
 ---
 
 #### Story 2.1.3: Implement User Registration Endpoint — `5 SP`
+- [x] **COMPLETED**
 
 **Description:** `POST /api/auth/register` accepting email, password, display name. Validates input, checks duplicate emails, hashes password, creates user, returns JWT for immediate login.
 
