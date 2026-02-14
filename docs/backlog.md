@@ -576,6 +576,7 @@ Build a multi-user, web-based GTD (Getting Things Done) todo application similar
 ---
 
 #### Story 4.1.4: Implement Update Task Endpoint — `5 SP`
+- [x] **COMPLETED**
 
 **Description:** `PUT /api/tasks/{id}` updates any mutable attribute (partial updates). Refreshes `updatedAt`.
 

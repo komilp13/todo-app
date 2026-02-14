@@ -1,8 +1,11 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using TodoApp.Api.Handlers;
 using TodoApp.Application.Features.Tasks.CreateTask;
 using TodoApp.Application.Features.Tasks.GetTasks;
+using TodoApp.Application.Features.Tasks.UpdateTask;
+using TodoApp.Domain.Enums;
 using TodoApp.Domain.Interfaces;
 using TodoApp.Infrastructure.Persistence;
 
@@ -36,6 +39,14 @@ public static class TaskEndpoints
 
         group.MapGet("/{id}", GetTaskById)
             .WithName("GetTaskById")
+            .WithOpenApi()
+            .Produces<TaskItemDto>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces(StatusCodes.Status404NotFound);
+
+        group.MapPut("/{id}", UpdateTask)
+            .WithName("UpdateTask")
             .WithOpenApi()
             .Produces<TaskItemDto>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status400BadRequest)
@@ -177,5 +188,121 @@ public static class TaskEndpoints
         }
 
         return Results.Ok(task);
+    }
+
+    private static async Task<IResult> UpdateTask(
+        string id,
+        [FromBody] Dictionary<string, object?> requestBody,
+        ClaimsPrincipal user,
+        ApplicationDbContext dbContext,
+        CancellationToken cancellationToken)
+    {
+        // Extract user ID from JWT claims
+        var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier);
+        if (userIdClaim == null || !Guid.TryParse(userIdClaim.Value, out var userId))
+        {
+            return Results.Unauthorized();
+        }
+
+        // Validate task ID format
+        if (!Guid.TryParse(id, out var taskId))
+        {
+            return Results.BadRequest(new { errors = new { id = new[] { "Task ID must be a valid GUID." } } });
+        }
+
+        // Build command from request body (only include provided fields)
+        var command = new UpdateTaskCommand
+        {
+            TaskId = taskId,
+            UserId = userId,
+            HasProjectId = requestBody.ContainsKey("projectId"),
+            HasDueDate = requestBody.ContainsKey("dueDate")
+        };
+
+        // Parse optional fields if provided
+        if (requestBody.TryGetValue("name", out var nameValue) && nameValue is string name)
+        {
+            command.Name = name;
+        }
+
+        if (requestBody.TryGetValue("description", out var descValue))
+        {
+            command.Description = descValue as string;
+        }
+
+        if (requestBody.TryGetValue("dueDate", out var dueDateValue) && dueDateValue is string dueDateStr)
+        {
+            if (DateTime.TryParse(dueDateStr, out var dueDate))
+            {
+                command.DueDate = dueDate;
+            }
+        }
+
+        if (requestBody.TryGetValue("priority", out var priorityValue) && priorityValue is string priorityStr)
+        {
+            if (Enum.TryParse<Priority>(priorityStr, ignoreCase: true, out var priority))
+            {
+                command.Priority = priority;
+            }
+        }
+
+        if (requestBody.TryGetValue("systemList", out var systemListValue) && systemListValue is string systemListStr)
+        {
+            if (Enum.TryParse<Domain.Enums.SystemList>(systemListStr, ignoreCase: true, out var systemList))
+            {
+                command.SystemList = systemList;
+            }
+        }
+
+        if (requestBody.TryGetValue("projectId", out var projectIdValue))
+        {
+            if (projectIdValue is string projectIdStr && !string.IsNullOrEmpty(projectIdStr))
+            {
+                if (Guid.TryParse(projectIdStr, out var projectId))
+                {
+                    command.ProjectId = projectId;
+                }
+            }
+            else if (projectIdValue == null)
+            {
+                command.ProjectId = null; // Explicitly clear project
+            }
+        }
+
+        // Validate command
+        var validator = new UpdateTaskCommandValidator();
+        var validationResult = await validator.ValidateAsync(command, cancellationToken);
+
+        if (!validationResult.IsValid)
+        {
+            var errors = validationResult.Errors
+                .GroupBy(e => e.PropertyName)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.Select(e => e.ErrorMessage).ToArray());
+
+            return Results.BadRequest(new { errors });
+        }
+
+        try
+        {
+            var handler = new UpdateTaskHandler(dbContext);
+            var response = await handler.Handle(command, cancellationToken);
+
+            if (response == null)
+            {
+                return Results.NotFound(new { message = "Task not found or does not belong to the authenticated user." });
+            }
+
+            return Results.Ok(response);
+        }
+        catch (InvalidOperationException ex) when (ex.Message.Contains("not found"))
+        {
+            return Results.BadRequest(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Results.BadRequest(new { message = ex.Message });
+        }
     }
 }

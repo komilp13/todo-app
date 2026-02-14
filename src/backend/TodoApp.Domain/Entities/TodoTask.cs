@@ -124,5 +124,59 @@ public class TodoTask
         };
     }
 
+    /// <summary>
+    /// Update task name.
+    /// </summary>
+    public void UpdateName(string name)
+    {
+        Name = name;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    /// <summary>
+    /// Update task description.
+    /// </summary>
+    public void UpdateDescription(string? description)
+    {
+        Description = description;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    /// <summary>
+    /// Update task priority.
+    /// </summary>
+    public void UpdatePriority(Priority priority)
+    {
+        Priority = priority;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    /// <summary>
+    /// Update task system list.
+    /// </summary>
+    public void UpdateSystemList(SystemList systemList)
+    {
+        SystemList = systemList;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    /// <summary>
+    /// Update task due date.
+    /// </summary>
+    public void UpdateDueDate(DateTime? dueDate)
+    {
+        DueDate = dueDate;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    /// <summary>
+    /// Update task project ID.
+    /// </summary>
+    public void UpdateProjectId(Guid? projectId)
+    {
+        ProjectId = projectId;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
     private TodoTask() { }
 }
