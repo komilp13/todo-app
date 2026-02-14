@@ -373,6 +373,7 @@ Build a multi-user, web-based GTD (Getting Things Done) todo application similar
 ---
 
 #### Story 2.2.1: Build Registration Page — `5 SP`
+- [x] **COMPLETED**
 
 **Description:** Registration page at `/register` with display name, email, password, confirm password fields. Client-side validation matching backend rules. On success, stores JWT and redirects to app.
 
