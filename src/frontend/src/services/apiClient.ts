@@ -9,6 +9,11 @@ interface FetchOptions extends RequestInit {
   skipAuth?: boolean;
 }
 
+interface ApiResponse<T> {
+  data: T;
+  status: number;
+}
+
 class ApiClient {
   private baseUrl: string;
 
@@ -56,7 +61,7 @@ class ApiClient {
   private async request<T>(
     endpoint: string,
     options: FetchOptions = {}
-  ): Promise<T> {
+  ): Promise<{ data: T; status: number }> {
     const url = `${this.baseUrl}${endpoint}`;
 
     try {
@@ -64,6 +69,8 @@ class ApiClient {
         ...options,
         headers: this.getHeaders(options),
       });
+
+      const data = await response.json().catch(() => ({}));
 
       if (!response.ok) {
         if (response.status === 401) {
@@ -74,18 +81,14 @@ class ApiClient {
           }
         }
 
-        const error = await response.json().catch(() => ({
-          message: response.statusText,
-        }));
-
         throw new ApiError(
-          error.message || 'API request failed',
+          data.message || 'API request failed',
           response.status,
-          error
+          data
         );
       }
 
-      return response.json();
+      return { data: data as T, status: response.status };
     } catch (error) {
       if (error instanceof ApiError) {
         throw error;
@@ -102,7 +105,7 @@ class ApiClient {
   /**
    * GET request
    */
-  get<T>(endpoint: string, options?: FetchOptions): Promise<T> {
+  get<T>(endpoint: string, options?: FetchOptions): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, {
       ...options,
       method: 'GET',
@@ -116,7 +119,7 @@ class ApiClient {
     endpoint: string,
     body?: unknown,
     options?: FetchOptions
-  ): Promise<T> {
+  ): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, {
       ...options,
       method: 'POST',
@@ -131,7 +134,7 @@ class ApiClient {
     endpoint: string,
     body?: unknown,
     options?: FetchOptions
-  ): Promise<T> {
+  ): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, {
       ...options,
       method: 'PUT',
@@ -146,7 +149,7 @@ class ApiClient {
     endpoint: string,
     body?: unknown,
     options?: FetchOptions
-  ): Promise<T> {
+  ): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, {
       ...options,
       method: 'PATCH',
@@ -157,7 +160,7 @@ class ApiClient {
   /**
    * DELETE request
    */
-  delete<T>(endpoint: string, options?: FetchOptions): Promise<T> {
+  delete<T>(endpoint: string, options?: FetchOptions): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, {
       ...options,
       method: 'DELETE',
