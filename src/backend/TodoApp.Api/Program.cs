@@ -10,7 +10,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services
     .AddSwaggerConfiguration()
     .AddCorsConfiguration(builder.Configuration)
-    .AddApplicationServices()
+    .AddApplicationServices(builder.Configuration)
+    .AddJwtAuthentication(builder.Configuration)
     .AddInfrastructureServices(builder.Configuration);
 
 var app = builder.Build();
@@ -41,6 +42,10 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseCors("AllowFrontend");
+
+// Add authentication and authorization middleware
+app.UseAuthentication();
+app.UseAuthorization();
 
 // Map endpoints
 app.MapHealthEndpoints();

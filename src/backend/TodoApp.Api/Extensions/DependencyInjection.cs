@@ -1,4 +1,8 @@
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using TodoApp.Application.Configuration;
 using TodoApp.Application.Services;
 using TodoApp.Domain.Interfaces;
 using TodoApp.Infrastructure.Persistence;
@@ -13,10 +17,14 @@ public static class DependencyInjection
     /// <summary>
     /// Registers application layer services.
     /// </summary>
-    public static IServiceCollection AddApplicationServices(this IServiceCollection services)
+    public static IServiceCollection AddApplicationServices(this IServiceCollection services, IConfiguration configuration)
     {
         // Register password hashing service
         services.AddScoped<IPasswordHashingService, PasswordHashingService>();
+
+        // Register JWT token service
+        services.Configure<JwtSettings>(configuration.GetSection("Jwt"));
+        services.AddScoped<IJwtTokenService, JwtTokenService>();
 
         // Register other application services here
         // Example: services.AddScoped<IUserService, UserService>();
@@ -67,6 +75,40 @@ public static class DependencyInjection
     {
         services.AddEndpointsApiExplorer();
         services.AddSwaggerGen();
+        return services;
+    }
+
+    /// <summary>
+    /// Configures JWT Bearer authentication.
+    /// </summary>
+    public static IServiceCollection AddJwtAuthentication(this IServiceCollection services, IConfiguration configuration)
+    {
+        var jwtSettings = configuration.GetSection("Jwt").Get<JwtSettings>();
+        if (jwtSettings == null || string.IsNullOrWhiteSpace(jwtSettings.SecretKey))
+            throw new InvalidOperationException("JWT configuration is missing or invalid");
+
+        var key = Encoding.ASCII.GetBytes(jwtSettings.SecretKey);
+
+        services.AddAuthentication(options =>
+        {
+            options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+            options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+        })
+        .AddJwtBearer(options =>
+        {
+            options.TokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = new SymmetricSecurityKey(key),
+                ValidateIssuer = true,
+                ValidIssuer = jwtSettings.Issuer,
+                ValidateAudience = true,
+                ValidAudience = jwtSettings.Audience,
+                ValidateLifetime = true,
+                ClockSkew = TimeSpan.Zero
+            };
+        });
+
         return services;
     }
 }

@@ -300,6 +300,7 @@ Build a multi-user, web-based GTD (Getting Things Done) todo application similar
 ---
 
 #### Story 2.1.2: Implement JWT Token Service — `5 SP`
+- [x] **COMPLETED**
 
 **Description:** Create a `JwtTokenService` that generates signed JWT tokens and validates them. Token contains user ID, email, expiration. Signing key, issuer, audience, expiration configurable via appsettings. Integrates with ASP.NET Core auth middleware.
 
