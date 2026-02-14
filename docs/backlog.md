@@ -230,6 +230,7 @@ Build a multi-user, web-based GTD (Getting Things Done) todo application similar
 ---
 
 #### Story 1.4.1: Create Docker Compose Development Environment — `5 SP`
+- [x] **COMPLETED**
 
 **Description:** Create `docker-compose.yml` at the repo root orchestrating PostgreSQL, C# backend (hot-reload), and Next.js frontend (hot-reload). Include `.env.example`.
 
