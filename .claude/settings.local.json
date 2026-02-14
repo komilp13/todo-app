@@ -24,7 +24,8 @@
       "Bash(npm test:*)",
       "Bash(chmod:*)",
       "Bash(psql:*)",
-      "Bash(dotnet clean:*)"
+      "Bash(dotnet clean:*)",
+      "Bash(npm run test:*)"
     ]
   }
 }
