@@ -1,7 +1,10 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
+using TodoApp.Api.Handlers;
 using TodoApp.Application.Features.Tasks.CreateTask;
+using TodoApp.Application.Features.Tasks.GetTasks;
 using TodoApp.Domain.Interfaces;
+using TodoApp.Infrastructure.Persistence;
 
 namespace TodoApp.Api.Endpoints;
 
@@ -23,6 +26,13 @@ public static class TaskEndpoints
             .Produces(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status401Unauthorized)
             .Produces(StatusCodes.Status404NotFound);
+
+        group.MapGet("/", GetTasks)
+            .WithName("GetTasks")
+            .WithOpenApi()
+            .Produces<GetTasksResponse>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status401Unauthorized);
     }
 
     private static async Task<IResult> CreateTask(
@@ -71,5 +81,51 @@ public static class TaskEndpoints
         {
             return Results.BadRequest(new { message = ex.Message });
         }
+    }
+
+    private static async Task<IResult> GetTasks(
+        ClaimsPrincipal user,
+        ApplicationDbContext dbContext,
+        [AsParameters] GetTasksQueryParams queryParams,
+        CancellationToken cancellationToken)
+    {
+        // Extract user ID from JWT claims
+        var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier);
+        if (userIdClaim == null || !Guid.TryParse(userIdClaim.Value, out var userId))
+        {
+            return Results.Unauthorized();
+        }
+
+        // Create query from parameters
+        var query = new GetTasksQuery
+        {
+            SystemList = queryParams.SystemList,
+            ProjectId = queryParams.ProjectId,
+            LabelId = queryParams.LabelId,
+            Status = queryParams.Status ?? "Open",
+            Archived = queryParams.Archived ?? false,
+            UserId = userId
+        };
+
+        // Validate query
+        var validator = new GetTasksQueryValidator();
+        var validationResult = await validator.ValidateAsync(query, cancellationToken);
+
+        if (!validationResult.IsValid)
+        {
+            var errors = validationResult.Errors
+                .GroupBy(e => e.PropertyName)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.Select(e => e.ErrorMessage).ToArray());
+
+            return Results.BadRequest(new { errors });
+        }
+
+        // Execute query
+        var handler = new GetTasksHandler(dbContext);
+        var response = await handler.Handle(query, cancellationToken);
+
+        return Results.Ok(response);
     }
 }

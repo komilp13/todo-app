@@ -545,6 +545,7 @@ Build a multi-user, web-based GTD (Getting Things Done) todo application similar
 ---
 
 #### Story 4.1.2: Implement Get Tasks Endpoint with Filtering — `8 SP`
+- [~] **IN PROGRESS**
 
 **Description:** `GET /api/tasks` returns authenticated user's tasks with filtering by system list, project ID, label ID, status, and archived flag. Sorted by sort order. Includes associated labels and project name.
 
