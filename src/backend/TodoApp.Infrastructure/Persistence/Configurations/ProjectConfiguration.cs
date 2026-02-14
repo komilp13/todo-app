@@ -16,37 +16,46 @@ public class ProjectConfiguration : IEntityTypeConfiguration<Project>
 
         builder.Property(x => x.Id)
             .HasColumnType("uuid")
+            .HasColumnName("id")
             .ValueGeneratedNever();
 
         builder.Property(x => x.UserId)
             .HasColumnType("uuid")
+            .HasColumnName("user_id")
             .IsRequired();
 
         builder.Property(x => x.Name)
             .IsRequired()
             .HasMaxLength(100)
-            .HasColumnType("text");
+            .HasColumnType("text")
+            .HasColumnName("name");
 
         builder.Property(x => x.Description)
             .HasMaxLength(4000)
-            .HasColumnType("text");
+            .HasColumnType("text")
+            .HasColumnName("description");
 
         builder.Property(x => x.DueDate)
-            .HasColumnType("timestamp with time zone");
+            .HasColumnType("timestamp with time zone")
+            .HasColumnName("due_date");
 
         builder.Property(x => x.Status)
             .HasConversion<int>()
-            .HasDefaultValue(ProjectStatus.Active);
+            .HasDefaultValue(ProjectStatus.Active)
+            .HasColumnName("status");
 
         builder.Property(x => x.SortOrder)
-            .HasDefaultValue(0);
+            .HasDefaultValue(0)
+            .HasColumnName("sort_order");
 
         builder.Property(x => x.CreatedAt)
             .HasColumnType("timestamp with time zone")
+            .HasColumnName("created_at")
             .ValueGeneratedNever();
 
         builder.Property(x => x.UpdatedAt)
             .HasColumnType("timestamp with time zone")
+            .HasColumnName("updated_at")
             .ValueGeneratedNever();
 
         // Foreign keys and relationships

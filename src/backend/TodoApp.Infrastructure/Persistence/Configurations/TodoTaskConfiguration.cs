@@ -17,54 +17,68 @@ public class TodoTaskConfiguration : IEntityTypeConfiguration<TodoTask>
 
         builder.Property(x => x.Id)
             .HasColumnType("uuid")
+            .HasColumnName("id")
             .ValueGeneratedNever();
 
         builder.Property(x => x.UserId)
             .HasColumnType("uuid")
+            .HasColumnName("user_id")
             .IsRequired();
 
         builder.Property(x => x.Name)
             .IsRequired()
             .HasMaxLength(500)
-            .HasColumnType("text");
+            .HasColumnType("text")
+            .HasColumnName("name");
 
         builder.Property(x => x.Description)
             .HasMaxLength(4000)
-            .HasColumnType("text");
+            .HasColumnType("text")
+            .HasColumnName("description");
 
         builder.Property(x => x.DueDate)
-            .HasColumnType("timestamp with time zone");
+            .HasColumnType("timestamp with time zone")
+            .HasColumnName("due_date");
 
         builder.Property(x => x.Priority)
             .HasConversion<int>()
-            .HasDefaultValue(Priority.P4);
+            .HasDefaultValue(Priority.P4)
+            .HasColumnName("priority");
 
         builder.Property(x => x.Status)
             .HasConversion<int>()
-            .HasDefaultValue(TaskStatus.Open);
+            .HasDefaultValue(TaskStatus.Open)
+            .HasColumnName("status");
 
         builder.Property(x => x.SystemList)
             .HasConversion<int>()
-            .HasDefaultValue(SystemList.Inbox);
+            .HasDefaultValue(SystemList.Inbox)
+            .HasColumnName("system_list");
 
         builder.Property(x => x.SortOrder)
-            .HasDefaultValue(0);
+            .HasDefaultValue(0)
+            .HasColumnName("sort_order");
 
         builder.Property(x => x.ProjectId)
-            .HasColumnType("uuid");
+            .HasColumnType("uuid")
+            .HasColumnName("project_id");
 
         builder.Property(x => x.IsArchived)
-            .HasDefaultValue(false);
+            .HasDefaultValue(false)
+            .HasColumnName("is_archived");
 
         builder.Property(x => x.CompletedAt)
-            .HasColumnType("timestamp with time zone");
+            .HasColumnType("timestamp with time zone")
+            .HasColumnName("completed_at");
 
         builder.Property(x => x.CreatedAt)
             .HasColumnType("timestamp with time zone")
+            .HasColumnName("created_at")
             .ValueGeneratedNever();
 
         builder.Property(x => x.UpdatedAt)
             .HasColumnType("timestamp with time zone")
+            .HasColumnName("updated_at")
             .ValueGeneratedNever();
 
         // Foreign keys and relationships

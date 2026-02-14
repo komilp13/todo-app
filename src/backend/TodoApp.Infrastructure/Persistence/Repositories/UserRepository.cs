@@ -26,7 +26,7 @@ public class UserRepository : IUserRepository
     public async Task<User?> GetByEmailAsync(string email, CancellationToken cancellationToken = default)
     {
         var lowerEmail = email.ToLowerInvariant();
-        return await _dbContext.Users.FirstOrDefaultAsync(u => u.Email == lowerEmail, cancellationToken);
+        return await _dbContext.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == lowerEmail, cancellationToken);
     }
 
     /// <inheritdoc />
