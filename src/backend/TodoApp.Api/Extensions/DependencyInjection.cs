@@ -1,4 +1,6 @@
 using Microsoft.EntityFrameworkCore;
+using TodoApp.Application.Services;
+using TodoApp.Domain.Interfaces;
 using TodoApp.Infrastructure.Persistence;
 
 namespace TodoApp.Api.Extensions;
@@ -13,7 +15,10 @@ public static class DependencyInjection
     /// </summary>
     public static IServiceCollection AddApplicationServices(this IServiceCollection services)
     {
-        // Register application services here
+        // Register password hashing service
+        services.AddScoped<IPasswordHashingService, PasswordHashingService>();
+
+        // Register other application services here
         // Example: services.AddScoped<IUserService, UserService>();
         return services;
     }

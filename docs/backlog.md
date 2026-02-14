@@ -286,6 +286,7 @@ Build a multi-user, web-based GTD (Getting Things Done) todo application similar
 ---
 
 #### Story 2.1.1: Implement Password Hashing Service — `3 SP`
+- [x] **COMPLETED**
 
 **Description:** Create a `PasswordHashingService` with methods to hash a password (generating random salt) and verify a password against stored hash/salt. Use PBKDF2 with HMAC-SHA256 (100k+ iterations) or bcrypt.
 
