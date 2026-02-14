@@ -489,6 +489,7 @@ Build a multi-user, web-based GTD (Getting Things Done) todo application similar
 ---
 
 #### Story 3.1.4: Add User Profile Menu to Sidebar — `3 SP`
+- [~] **IN PROGRESS**
 
 **Description:** Show user display name and email in sidebar header. Dropdown menu with "Log out" option.
 
