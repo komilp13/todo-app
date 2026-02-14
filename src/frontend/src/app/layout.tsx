@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import '../styles/globals.css';
 import { AuthProvider } from '@/contexts/AuthContext';
+import AuthenticatedLayout from '@/components/AuthenticatedLayout';
 
 export const metadata: Metadata = {
   title: 'GTD Todo - Getting Things Done',
@@ -16,8 +17,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>
-        <AuthProvider>{children}</AuthProvider>
+      <body className="h-screen overflow-hidden">
+        <AuthProvider>
+          <AuthenticatedLayout>{children}</AuthenticatedLayout>
+        </AuthProvider>
       </body>
     </html>
   );
