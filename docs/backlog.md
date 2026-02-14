@@ -407,7 +407,7 @@ Build a multi-user, web-based GTD (Getting Things Done) todo application similar
 ---
 
 #### Story 2.2.3: Implement Auth State Management and Protected Routes — `8 SP`
-- [~] **IN PROGRESS**
+- [x] **COMPLETED**
 
 **Description:** React context for auth state (current user, login/logout, loading). Next.js middleware protecting routes. Token validation on app load via `GET /api/auth/me`.
 
