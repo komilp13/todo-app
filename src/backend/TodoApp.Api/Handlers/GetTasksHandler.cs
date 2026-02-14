@@ -28,25 +28,24 @@ public class GetTasksHandler
             .Where(t => t.UserId == query.UserId)
             .AsQueryable();
 
-        // Apply status filter
-        if (query.Status == "Open")
-        {
-            tasksQuery = tasksQuery.Where(t => t.Status == Domain.Enums.TaskStatus.Open && !t.IsArchived);
-        }
-        else if (query.Status == "Done")
-        {
-            tasksQuery = tasksQuery.Where(t => t.Status == Domain.Enums.TaskStatus.Done && t.IsArchived);
-        }
-        // If Status == "All", no status filter applied
-
-        // Apply archived filter (independent of status)
+        // Apply archived filter first - it takes precedence over status filter
         if (query.Archived)
         {
+            // When explicitly requesting archived, show only archived tasks
             tasksQuery = tasksQuery.Where(t => t.IsArchived);
         }
-        else if (!query.Archived && query.Status != "Done")
+        else
         {
-            tasksQuery = tasksQuery.Where(t => !t.IsArchived);
+            // Apply status filter only if not requesting archived
+            if (query.Status == "Open")
+            {
+                tasksQuery = tasksQuery.Where(t => t.Status == Domain.Enums.TaskStatus.Open && !t.IsArchived);
+            }
+            else if (query.Status == "Done")
+            {
+                tasksQuery = tasksQuery.Where(t => t.Status == Domain.Enums.TaskStatus.Done && t.IsArchived);
+            }
+            // If Status == "All", don't filter by archived status - return all tasks
         }
 
         // Apply system list filter

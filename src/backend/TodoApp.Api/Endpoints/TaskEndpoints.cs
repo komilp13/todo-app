@@ -96,10 +96,21 @@ public static class TaskEndpoints
             return Results.Unauthorized();
         }
 
+        // Parse system list if provided
+        Domain.Enums.SystemList? systemList = null;
+        if (!string.IsNullOrEmpty(queryParams.SystemList))
+        {
+            if (!Enum.TryParse<Domain.Enums.SystemList>(queryParams.SystemList, ignoreCase: true, out var parsedSystemList))
+            {
+                return Results.BadRequest(new { errors = new { systemList = new[] { "SystemList must be a valid value (Inbox, Next, Upcoming, or Someday)." } } });
+            }
+            systemList = parsedSystemList;
+        }
+
         // Create query from parameters
         var query = new GetTasksQuery
         {
-            SystemList = queryParams.SystemList,
+            SystemList = systemList,
             ProjectId = queryParams.ProjectId,
             LabelId = queryParams.LabelId,
             Status = queryParams.Status ?? "Open",
