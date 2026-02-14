@@ -18,7 +18,10 @@
       "Bash(pkill:*)",
       "Bash(taskkill:*)",
       "Bash(netstat:*)",
-      "Bash(wmic process where name=\"node.exe\" delete)"
+      "Bash(wmic process where name=\"node.exe\" delete)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(npm test:*)"
     ]
   }
 }
