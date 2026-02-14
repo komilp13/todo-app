@@ -202,6 +202,7 @@ Build a multi-user, web-based GTD (Getting Things Done) todo application similar
 ---
 
 #### Story 1.3.3: Configure Frontend Testing Framework — `3 SP`
+- [x] **COMPLETED**
 
 **Description:** Set up Jest with React Testing Library for unit and component testing. Create test utilities and verify with a sample test.
 
