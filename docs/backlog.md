@@ -475,7 +475,7 @@ Build a multi-user, web-based GTD (Getting Things Done) todo application similar
 ---
 
 #### Story 3.1.3: Implement Responsive Sidebar Behavior — `5 SP`
-- [~] **IN PROGRESS**
+- [x] **COMPLETED**
 
 **Description:** Collapsible sidebar: desktop shows full or icon-only strip; mobile shows slide-in overlay with hamburger toggle.
 
