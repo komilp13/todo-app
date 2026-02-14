@@ -445,7 +445,7 @@ Build a multi-user, web-based GTD (Getting Things Done) todo application similar
 ---
 
 #### Story 3.1.1: Build Application Shell Layout Component — `5 SP`
-- [~] **IN PROGRESS**
+- [x] **COMPLETED**
 
 **Description:** Root layout dividing screen into fixed-width sidebar (~280px) and flexible content area. Sidebar has header (logo/user), scrollable navigation, and footer. Content area has header bar and scrollable content.
 
@@ -460,6 +460,7 @@ Build a multi-user, web-based GTD (Getting Things Done) todo application similar
 ---
 
 #### Story 3.1.2: Implement Sidebar Navigation with System Lists — `5 SP`
+- [~] **IN PROGRESS**
 
 **Description:** Populate sidebar with Inbox, Next, Upcoming, Someday. Each shows icon, name, and open task count badge. Active list highlighted. Click navigates to list view.
 
