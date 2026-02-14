@@ -332,6 +332,7 @@ Build a multi-user, web-based GTD (Getting Things Done) todo application similar
 ---
 
 #### Story 2.1.4: Implement User Login Endpoint — `5 SP`
+- [x] **COMPLETED**
 
 **Description:** `POST /api/auth/login` accepting email and password, verifying against stored salted hash, returning JWT. Generic error message prevents user enumeration.
 
