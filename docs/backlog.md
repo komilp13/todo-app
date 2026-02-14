@@ -528,6 +528,7 @@ Build a multi-user, web-based GTD (Getting Things Done) todo application similar
 ---
 
 #### Story 4.1.1: Implement Create Task Endpoint — `5 SP`
+- [~] **IN PROGRESS**
 
 **Description:** `POST /api/tasks` creates a task for the authenticated user. Accepts name (required), optionally description, due date, priority, system list, project ID. Defaults: Inbox, P4, Open. Sort order places new task at top.
 
