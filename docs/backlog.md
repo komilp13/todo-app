@@ -247,6 +247,7 @@ Build a multi-user, web-based GTD (Getting Things Done) todo application similar
 ---
 
 #### Story 1.4.2: Set Up CI Pipeline with GitHub Actions — `5 SP`
+- [x] **COMPLETED**
 
 **Description:** Create a GitHub Actions workflow that runs on PRs to `main`: backend build/test, frontend lint/build/test, with PostgreSQL service container.
 
