@@ -41,12 +41,7 @@ export function useSystemListCounts() {
       // For now, we'll fetch all tasks and filter client-side
       // In the future, the API can optimize this with a dedicated endpoint
       try {
-        const response = await apiClient.get<TodoTask[]>('/tasks', {
-          params: {
-            status: 'Open',
-            archived: 'false',
-          },
-        });
+        const response = await apiClient.get<TodoTask[]>('/tasks?status=Open&archived=false');
 
         const tasks = response.data || [];
 
