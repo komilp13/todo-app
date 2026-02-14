@@ -7,7 +7,7 @@
  */
 export default function ContentHeader() {
   return (
-    <header className="border-b border-gray-200 bg-white px-6 py-4 shadow-sm">
+    <header className="bg-white px-6 py-4">
       <div className="flex items-center justify-end">
         {/* Space for action buttons, search, etc. */}
       </div>
