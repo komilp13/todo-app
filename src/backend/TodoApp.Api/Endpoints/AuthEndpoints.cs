@@ -1,3 +1,6 @@
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
+using TodoApp.Application.Features.Auth.CurrentUser;
 using TodoApp.Application.Features.Auth.Login;
 using TodoApp.Application.Features.Auth.Register;
 using TodoApp.Domain.Interfaces;
@@ -27,6 +30,14 @@ public static class AuthEndpoints
             .Produces<LoginResponse>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status401Unauthorized);
+
+        group.MapGet("/me", GetCurrentUser)
+            .WithName("GetCurrentUser")
+            .WithOpenApi()
+            .RequireAuthorization()
+            .Produces<CurrentUserResponse>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces(StatusCodes.Status404NotFound);
     }
 
     private static async Task<IResult> Register(
@@ -95,5 +106,29 @@ public static class AuthEndpoints
         {
             return Results.Unauthorized();
         }
+    }
+
+    private static async Task<IResult> GetCurrentUser(
+        ClaimsPrincipal user,
+        IUserRepository userRepository,
+        CancellationToken cancellationToken)
+    {
+        // Extract user ID from JWT claims
+        var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier);
+        if (userIdClaim == null || !Guid.TryParse(userIdClaim.Value, out var userId))
+        {
+            return Results.Unauthorized();
+        }
+
+        // Retrieve user from database
+        var handler = new CurrentUserHandler(userRepository);
+        var response = await handler.Handle(userId, cancellationToken);
+
+        if (response == null)
+        {
+            return Results.NotFound();
+        }
+
+        return Results.Ok(response);
     }
 }

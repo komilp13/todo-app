@@ -346,6 +346,7 @@ Build a multi-user, web-based GTD (Getting Things Done) todo application similar
 ---
 
 #### Story 2.1.5: Implement Current User Endpoint — `2 SP`
+- [x] **COMPLETED**
 
 **Description:** `GET /api/auth/me` protected endpoint returning the current user's profile based on JWT claims.
 
