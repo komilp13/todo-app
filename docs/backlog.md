@@ -793,6 +793,7 @@ Build a multi-user, web-based GTD (Getting Things Done) todo application similar
 ---
 
 #### Story 4.4.3: Add Delete Task Functionality — `3 SP`
+- [x] **COMPLETED**
 
 **Description:** Delete button in detail panel opens confirmation dialog ("permanent, cannot be undone"). On confirm, hard-delete via API, panel closes, task removed from list.
 

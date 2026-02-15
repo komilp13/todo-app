@@ -30,6 +30,11 @@ export default function NextPage() {
     setSelectedTaskId(null);
   };
 
+  const handleTaskDeleted = () => {
+    setSelectedTaskId(null);
+    setRefreshCounter(prev => prev + 1);
+  };
+
   const handleTaskComplete = (taskId: string) => {
     // TODO: Call complete endpoint (Story 4.2.2)
   };
@@ -65,6 +70,7 @@ export default function NextPage() {
         isOpen={!!selectedTaskId}
         taskId={selectedTaskId}
         onClose={handleClosePanel}
+        onTaskDeleted={handleTaskDeleted}
       />
     </>
   );

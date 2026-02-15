@@ -12,6 +12,7 @@ import { useEffect, useState, useRef } from 'react';
 import { TodoTask, Priority, TaskStatus, SystemList } from '@/types';
 import { apiClient, ApiError } from '@/services/apiClient';
 import { useToast } from '@/hooks/useToast';
+import ConfirmationModal from '@/components/shared/ConfirmationModal';
 
 interface TaskDetailPanelProps {
   isOpen: boolean;
@@ -19,6 +20,7 @@ interface TaskDetailPanelProps {
   onClose: () => void;
   isArchiveView?: boolean;
   onTaskReopened?: () => void;
+  onTaskDeleted?: () => void;
 }
 
 export default function TaskDetailPanel({
@@ -27,6 +29,7 @@ export default function TaskDetailPanel({
   onClose,
   isArchiveView = false,
   onTaskReopened,
+  onTaskDeleted,
 }: TaskDetailPanelProps) {
   const [task, setTask] = useState<TodoTask | null>(null);
   const [loading, setLoading] = useState(false);
@@ -34,6 +37,8 @@ export default function TaskDetailPanel({
   const [editingField, setEditingField] = useState<string | null>(null);
   const [editValue, setEditValue] = useState<any>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
   const { show } = useToast();
 
@@ -90,6 +95,45 @@ export default function TaskDetailPanel({
     if (e.target === e.currentTarget) {
       onClose();
     }
+  };
+
+  // Handle task delete
+  const handleDeleteClick = () => {
+    setShowDeleteConfirm(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!task || isDeleting) return;
+
+    setIsDeleting(true);
+
+    try {
+      await apiClient.delete(`/tasks/${task.id}`);
+
+      show('Task deleted', { type: 'success' });
+
+      // Close confirmation modal
+      setShowDeleteConfirm(false);
+
+      // Close panel
+      onClose();
+
+      // Notify parent to refresh list
+      onTaskDeleted?.();
+    } catch (err) {
+      console.error('Failed to delete task:', err);
+      if (err instanceof ApiError) {
+        show(err.message || 'Failed to delete task', { type: 'error' });
+      } else {
+        show('Failed to delete task', { type: 'error' });
+      }
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    setShowDeleteConfirm(false);
   };
 
   // Handle task reopen (for archived tasks)
@@ -566,10 +610,39 @@ export default function TaskDetailPanel({
                   </div>
                 </div>
               </div>
+
+              {/* Delete Section - only show for non-archived tasks */}
+              {!isArchiveView && (
+                <div className="mt-8 pt-6 border-t border-gray-200">
+                  <button
+                    onClick={handleDeleteClick}
+                    disabled={isDeleting}
+                    className="w-full px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Delete Task
+                  </button>
+                  <p className="mt-2 text-xs text-gray-500 text-center">
+                    This action cannot be undone
+                  </p>
+                </div>
+              )}
             </div>
           ) : null}
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showDeleteConfirm}
+        title="Delete Task?"
+        message="This action cannot be undone. The task will be permanently deleted."
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        onConfirm={handleDeleteConfirm}
+        onCancel={handleDeleteCancel}
+        isDanger={true}
+        isLoading={isDeleting}
+      />
     </>
   );
 }
