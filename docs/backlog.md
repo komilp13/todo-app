@@ -712,6 +712,7 @@ Build a multi-user, web-based GTD (Getting Things Done) todo application similar
 ---
 
 #### Story 4.3.1: Build Quick-Add Task Input — `5 SP`
+- [x] **COMPLETED**
 
 **Description:** Inline input at top of every task list. "+" icon, placeholder "Add a task...". Enter creates task with current list context. Optimistic UI. Input stays focused for rapid entry.
 

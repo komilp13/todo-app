@@ -24,15 +24,17 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import { TodoTask, SystemList, TaskStatus } from '@/types';
+import { TodoTask, SystemList, TaskStatus, Priority } from '@/types';
 import { apiClient, ApiError } from '@/services/apiClient';
 import { useToast } from '@/hooks/useToast';
 import DraggableTaskRow from './DraggableTaskRow';
 import TaskListSkeleton from './TaskListSkeleton';
+import QuickAddTaskInput from './QuickAddTaskInput';
 import ToastContainer from '../Toast/ToastContainer';
 
 interface TaskListProps {
   systemList: SystemList;
+  projectId?: string;
   onTaskClick?: (task: TodoTask) => void;
   onTaskComplete?: (taskId: string) => void;
   refresh?: number; // Increment to trigger refetch
@@ -47,6 +49,7 @@ interface CompletingTask {
 
 export default function TaskList({
   systemList,
+  projectId,
   onTaskClick,
   onTaskComplete,
   refresh = 0,
@@ -289,6 +292,59 @@ export default function TaskList({
     }
   };
 
+  const handleQuickAddTask = async (taskName: string) => {
+    try {
+      // Create optimistic task object
+      const optimisticTask: TodoTask = {
+        id: `temp-${Date.now()}`,
+        userId: 'temp',
+        name: taskName,
+        priority: Priority.P4,
+        status: TaskStatus.Open,
+        systemList,
+        sortOrder: 0,
+        isArchived: false,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        projectId: projectId || undefined,
+      };
+
+      // Add to top of list optimistically
+      setTasks([optimisticTask, ...tasks]);
+
+      // Call API to create task
+      const { data: createdTask } = await apiClient.post<TodoTask>(
+        '/tasks',
+        {
+          name: taskName,
+          systemList,
+          projectId: projectId || undefined,
+        }
+      );
+
+      // Replace optimistic task with real task
+      setTasks((currentTasks) =>
+        currentTasks.map((t) =>
+          t.id === optimisticTask.id ? createdTask : t
+        )
+      );
+
+      show('Task created', { type: 'success' });
+    } catch (err) {
+      // Remove optimistic task on failure
+      setTasks((currentTasks) =>
+        currentTasks.filter((t) => t.id !== `temp-${Date.now()}`)
+      );
+
+      console.error('Failed to create task:', err);
+      if (err instanceof ApiError) {
+        show(err.message || 'Failed to create task', { type: 'error' });
+      } else {
+        show('Failed to create task', { type: 'error' });
+      }
+    }
+  };
+
   if (loading) {
     return <TaskListSkeleton />;
   }
@@ -303,17 +359,32 @@ export default function TaskList({
 
   if (tasks.length === 0) {
     return (
-      <div className="rounded-lg border border-gray-200 bg-white p-8 text-center">
-        <p className="text-gray-500">
-          No tasks here. Enjoy your free time! 🎉
-        </p>
-        <ToastContainer toasts={toasts} onDismiss={dismiss} />
-      </div>
+      <>
+        <QuickAddTaskInput
+          systemList={systemList}
+          projectId={projectId}
+          onTaskCreated={handleQuickAddTask}
+          onError={(error) => show(error, { type: 'error' })}
+        />
+        <div className="rounded-lg border border-gray-200 bg-white p-8 text-center">
+          <p className="text-gray-500">
+            No tasks here. Enjoy your free time! 🎉
+          </p>
+          <ToastContainer toasts={toasts} onDismiss={dismiss} />
+        </div>
+      </>
     );
   }
 
   return (
     <>
+      <QuickAddTaskInput
+        systemList={systemList}
+        projectId={projectId}
+        onTaskCreated={handleQuickAddTask}
+        onError={(error) => show(error, { type: 'error' })}
+      />
+
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
