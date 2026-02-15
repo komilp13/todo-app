@@ -28,6 +28,81 @@ public class GetTasksHandler
             .Where(t => t.UserId == query.UserId)
             .AsQueryable();
 
+        // Handle special "upcoming" view
+        if (!string.IsNullOrEmpty(query.View) && query.View.Equals("upcoming", StringComparison.OrdinalIgnoreCase))
+        {
+            var now = DateTime.UtcNow;
+            var upcomingThreshold = now.AddDays(14);
+
+            // Upcoming view: tasks with due dates within 14 days OR systemList = Upcoming
+            // Only non-archived, open tasks
+            tasksQuery = tasksQuery.Where(t =>
+                !t.IsArchived &&
+                t.Status == Domain.Enums.TaskStatus.Open &&
+                (
+                    (t.DueDate.HasValue && t.DueDate.Value <= upcomingThreshold) ||
+                    t.SystemList == SystemList.Upcoming
+                )
+            );
+
+            // Sort: overdue first (oldest first), then by due date ascending, then by priority
+            var upcomingTasks = await tasksQuery
+                .Include(t => t.Project)
+                .ToListAsync(cancellationToken);
+
+            // Get labels
+            var upcomingTaskIds = upcomingTasks.Select(t => t.Id).ToList();
+            var upcomingTaskLabelMappings = await _dbContext.TaskLabels
+                .Where(tl => upcomingTaskIds.Contains(tl.TaskId))
+                .Include(tl => tl.Label)
+                .ToListAsync(cancellationToken);
+
+            // Sort in-memory with custom logic
+            var sortedUpcomingTasks = upcomingTasks.OrderBy(t =>
+            {
+                // No due date = last
+                if (!t.DueDate.HasValue) return DateTime.MaxValue;
+                // Overdue = comes first, sorted oldest first
+                if (t.DueDate.Value < now) return t.DueDate.Value;
+                // Future dates
+                return t.DueDate.Value;
+            }).ThenBy(t => t.Priority).ToList();
+
+            // Map to DTOs
+            var upcomingTaskDtos = sortedUpcomingTasks.Select(task => new TaskItemDto
+            {
+                Id = task.Id,
+                Name = task.Name,
+                Description = task.Description,
+                DueDate = task.DueDate,
+                Priority = task.Priority,
+                Status = task.Status,
+                SystemList = task.SystemList,
+                SortOrder = task.SortOrder,
+                ProjectId = task.ProjectId,
+                ProjectName = task.Project?.Name,
+                IsArchived = task.IsArchived,
+                CompletedAt = task.CompletedAt,
+                Labels = upcomingTaskLabelMappings
+                    .Where(tl => tl.TaskId == task.Id)
+                    .Select(tl => new LabelDto
+                    {
+                        Id = tl.Label.Id,
+                        Name = tl.Label.Name,
+                        Color = tl.Label.Color
+                    })
+                    .ToArray(),
+                CreatedAt = task.CreatedAt,
+                UpdatedAt = task.UpdatedAt
+            }).ToArray();
+
+            return new GetTasksResponse
+            {
+                Tasks = upcomingTaskDtos,
+                TotalCount = upcomingTaskDtos.Length
+            };
+        }
+
         // Apply archived filter first - it takes precedence over status filter
         if (query.Archived)
         {

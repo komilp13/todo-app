@@ -4,26 +4,61 @@
  * Upcoming Page
  * Date-driven view showing tasks with due dates in the next 14 days,
  * plus tasks explicitly assigned to the Upcoming system list.
- *
- * This is a placeholder page structure that will be enhanced with
- * date grouping and the TaskList component in future stories.
+ * Groups tasks by: Overdue, Today, Tomorrow, specific dates, No date.
  */
 
 import { useCallback, useState } from 'react';
+import { TodoTask, SystemList, Priority, TaskStatus } from '@/types';
 import { useTaskRefresh } from '@/hooks/useTaskRefresh';
+import { useToast } from '@/hooks/useToast';
+import { apiClient, ApiError } from '@/services/apiClient';
 import TaskDetailPanel from '@/components/Tasks/TaskDetailPanel';
+import UpcomingTaskList from '@/components/Tasks/UpcomingTaskList';
+import QuickAddTaskInput from '@/components/Tasks/QuickAddTaskInput';
 
 export default function UpcomingPage() {
   const [refreshCounter, setRefreshCounter] = useState(0);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const { show } = useToast();
 
   // Register refresh callback for this page
   useTaskRefresh('upcoming', useCallback(() => {
     setRefreshCounter(prev => prev + 1);
   }, []));
 
+  const handleTaskClick = (task: TodoTask) => {
+    setSelectedTaskId(task.id);
+  };
+
   const handleClosePanel = () => {
     setSelectedTaskId(null);
+  };
+
+  const handleQuickAddTask = async (taskName: string) => {
+    try {
+      // Get today's date at midnight (local time)
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      // Create task with today's due date in Upcoming system list
+      await apiClient.post<TodoTask>('/tasks', {
+        name: taskName,
+        systemList: SystemList.Upcoming,
+        dueDate: today.toISOString(),
+      });
+
+      show('Task created with today\'s due date', { type: 'success' });
+
+      // Refresh the list to show the new task
+      setRefreshCounter(prev => prev + 1);
+    } catch (err) {
+      console.error('Failed to create task:', err);
+      if (err instanceof ApiError) {
+        show(err.message || 'Failed to create task', { type: 'error' });
+      } else {
+        show('Failed to create task', { type: 'error' });
+      }
+    }
   };
 
   return (
@@ -36,15 +71,18 @@ export default function UpcomingPage() {
           </p>
         </div>
 
-        {/* Placeholder for date-grouped TaskList component (Story 5.3.2) */}
-        <div className="rounded-lg border border-gray-200 bg-white p-8 text-center">
-          <p className="text-gray-500">
-            Upcoming tasks will be grouped by date. Set due dates to see them here.
-          </p>
-        </div>
+        <QuickAddTaskInput
+          systemList={SystemList.Upcoming}
+          onTaskCreated={handleQuickAddTask}
+          onError={(error) => show(error, { type: 'error' })}
+        />
+
+        <UpcomingTaskList
+          onTaskClick={handleTaskClick}
+          refresh={refreshCounter}
+        />
       </div>
 
-      {/* Task Detail Panel - Ready for integration when TaskList is added (Story 5.3.2) */}
       <TaskDetailPanel
         isOpen={!!selectedTaskId}
         taskId={selectedTaskId}

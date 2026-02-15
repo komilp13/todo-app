@@ -38,6 +38,7 @@ interface TaskListProps {
   onTaskClick?: (task: TodoTask) => void;
   onTaskComplete?: (taskId: string) => void;
   refresh?: number; // Increment to trigger refetch
+  emptyMessage?: string; // Custom empty state message
 }
 
 interface CompletingTask {
@@ -53,6 +54,7 @@ export default function TaskList({
   onTaskClick,
   onTaskComplete,
   refresh = 0,
+  emptyMessage = 'No tasks here. Enjoy your free time! 🎉',
 }: TaskListProps) {
   const [tasks, setTasks] = useState<TodoTask[]>([]);
   const [loading, setLoading] = useState(true);
@@ -367,9 +369,7 @@ export default function TaskList({
           onError={(error) => show(error, { type: 'error' })}
         />
         <div className="rounded-lg border border-gray-200 bg-white p-8 text-center">
-          <p className="text-gray-500">
-            No tasks here. Enjoy your free time! 🎉
-          </p>
+          <p className="text-gray-500">{emptyMessage}</p>
           <ToastContainer toasts={toasts} onDismiss={dismiss} />
         </div>
       </>

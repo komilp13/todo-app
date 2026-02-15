@@ -1,5 +1,7 @@
 'use client';
 
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import SystemListItem from './SystemListItem';
 import { useSystemListCounts } from '@/hooks/useSystemListCounts';
 import { SystemList } from '@/types';
@@ -14,6 +16,7 @@ interface SidebarNavigationProps {
  * Each list shows open task count and highlights active list
  */
 export default function SidebarNavigation({ onNavigate }: SidebarNavigationProps) {
+  const pathname = usePathname();
   const { counts, isLoading } = useSystemListCounts();
 
   // Define system lists with their icons
@@ -44,6 +47,24 @@ export default function SidebarNavigation({ onNavigate }: SidebarNavigationProps
             />
           ))}
         </div>
+      </div>
+
+      {/* Completed/Archive Section */}
+      <div className="mt-4 border-t border-gray-200 pt-4">
+        <Link href="/archive" onClick={onNavigate}>
+          <div
+            className={`flex items-center justify-between rounded-lg px-3 py-2 transition-colors ${
+              pathname === '/archive'
+                ? 'bg-blue-50 text-blue-700'
+                : 'text-gray-700 hover:bg-gray-100'
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <div className="text-xl">✓</div>
+              <span className="text-sm font-medium">Completed</span>
+            </div>
+          </div>
+        </Link>
       </div>
 
       {/* Future sections: Projects and Labels coming in later stories */}

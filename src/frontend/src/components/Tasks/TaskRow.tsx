@@ -18,6 +18,7 @@ interface TaskRowProps {
   onComplete?: (taskId: string) => void;
   onClick?: (task: TodoTask) => void;
   isAnimatingOut?: boolean;
+  showSystemList?: boolean;
 }
 
 export default function TaskRow({
@@ -28,6 +29,7 @@ export default function TaskRow({
   onComplete,
   onClick,
   isAnimatingOut = false,
+  showSystemList = false,
 }: TaskRowProps) {
   const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     e.stopPropagation();
@@ -82,7 +84,7 @@ export default function TaskRow({
           </div>
         </div>
 
-        {/* Metadata row: due date, project, labels */}
+        {/* Metadata row: due date, system list, project, labels */}
         <div className="mt-2 flex flex-wrap items-center gap-2">
           {/* Due Date */}
           {task.dueDate && (
@@ -94,6 +96,13 @@ export default function TaskRow({
               }`}
             >
               {relativeDueDate}
+            </span>
+          )}
+
+          {/* System List Badge (for cross-list views like Upcoming) */}
+          {showSystemList && (
+            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-50 text-purple-700 border border-purple-200">
+              {task.systemList}
             </span>
           )}
 

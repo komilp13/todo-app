@@ -416,4 +416,197 @@ public class GetTasksEndpointTests : IAsyncLifetime
         Assert.NotNull(result);
         Assert.Empty(result.Tasks); // Other user has no tasks
     }
+
+    [Fact]
+    public async Task GetTasks_UpcomingView_ReturnsTasksWithinNext14Days()
+    {
+        // Arrange
+        // Create tasks with various due dates
+        var tasks = new List<Domain.Entities.TodoTask>
+        {
+            Domain.Entities.TodoTask.Create(_userId, "Due Today", null, SystemList.Inbox, Priority.P1, null, DateTime.UtcNow),
+            Domain.Entities.TodoTask.Create(_userId, "Due in 7 days", null, SystemList.Next, Priority.P2, null, DateTime.UtcNow.AddDays(7)),
+            Domain.Entities.TodoTask.Create(_userId, "Due in 13 days", null, SystemList.Someday, Priority.P3, null, DateTime.UtcNow.AddDays(13)),
+            Domain.Entities.TodoTask.Create(_userId, "Due in 15 days", null, SystemList.Inbox, Priority.P4, null, DateTime.UtcNow.AddDays(15)), // Should NOT appear
+            Domain.Entities.TodoTask.Create(_userId, "No due date", null, SystemList.Inbox, Priority.P1, null, null) // Should NOT appear
+        };
+        _dbContext.Tasks.AddRange(tasks);
+        await _dbContext.SaveChangesAsync();
+
+        var request = CreateAuthenticatedRequest(HttpMethod.Get, "/api/tasks?view=upcoming");
+
+        // Act
+        var response = await _client.SendAsync(request);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var result = await response.Content.ReadFromJsonAsync<GetTasksResponse>(TestJsonHelper.DefaultOptions);
+        Assert.NotNull(result);
+
+        // Should include the existing Upcoming task + 3 new tasks with dates within 14 days
+        Assert.Equal(4, result.Tasks.Length);
+        Assert.All(result.Tasks.Where(t => t.DueDate.HasValue), t =>
+        {
+            var daysDiff = (t.DueDate!.Value.Date - DateTime.UtcNow.Date).Days;
+            Assert.True(daysDiff <= 14, $"Task {t.Name} has due date {daysDiff} days away");
+        });
+    }
+
+    [Fact]
+    public async Task GetTasks_UpcomingView_IncludesExplicitUpcomingListTasks()
+    {
+        // Arrange
+        // Create a task in Upcoming list with no due date
+        var upcomingTaskNoDueDate = Domain.Entities.TodoTask.Create(_userId, "Upcoming No Date", null, SystemList.Upcoming, Priority.P2, null, null);
+        _dbContext.Tasks.Add(upcomingTaskNoDueDate);
+        await _dbContext.SaveChangesAsync();
+
+        var request = CreateAuthenticatedRequest(HttpMethod.Get, "/api/tasks?view=upcoming");
+
+        // Act
+        var response = await _client.SendAsync(request);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var result = await response.Content.ReadFromJsonAsync<GetTasksResponse>(TestJsonHelper.DefaultOptions);
+        Assert.NotNull(result);
+
+        // Should include task with SystemList = Upcoming even without due date
+        var upcomingTask = result.Tasks.FirstOrDefault(t => t.Name == "Upcoming No Date");
+        Assert.NotNull(upcomingTask);
+        Assert.Equal(SystemList.Upcoming, upcomingTask.SystemList);
+        Assert.Null(upcomingTask.DueDate);
+    }
+
+    [Fact]
+    public async Task GetTasks_UpcomingView_IncludesOverdueTasks()
+    {
+        // Arrange
+        var overdueTasks = new List<Domain.Entities.TodoTask>
+        {
+            Domain.Entities.TodoTask.Create(_userId, "Overdue 1 day", null, SystemList.Inbox, Priority.P1, null, DateTime.UtcNow.AddDays(-1)),
+            Domain.Entities.TodoTask.Create(_userId, "Overdue 5 days", null, SystemList.Next, Priority.P2, null, DateTime.UtcNow.AddDays(-5))
+        };
+        _dbContext.Tasks.AddRange(overdueTasks);
+        await _dbContext.SaveChangesAsync();
+
+        var request = CreateAuthenticatedRequest(HttpMethod.Get, "/api/tasks?view=upcoming");
+
+        // Act
+        var response = await _client.SendAsync(request);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var result = await response.Content.ReadFromJsonAsync<GetTasksResponse>(TestJsonHelper.DefaultOptions);
+        Assert.NotNull(result);
+
+        // Should include overdue tasks
+        var overdueResults = result.Tasks.Where(t =>
+            t.DueDate.HasValue && t.DueDate.Value < DateTime.UtcNow).ToList();
+        Assert.True(overdueResults.Count >= 2);
+    }
+
+    [Fact]
+    public async Task GetTasks_UpcomingView_SortsOverdueFirst()
+    {
+        // Arrange
+        var tasks = new List<Domain.Entities.TodoTask>
+        {
+            Domain.Entities.TodoTask.Create(_userId, "Future 1", null, SystemList.Inbox, Priority.P1, null, DateTime.UtcNow.AddDays(3)),
+            Domain.Entities.TodoTask.Create(_userId, "Overdue oldest", null, SystemList.Inbox, Priority.P1, null, DateTime.UtcNow.AddDays(-10)),
+            Domain.Entities.TodoTask.Create(_userId, "Overdue recent", null, SystemList.Inbox, Priority.P1, null, DateTime.UtcNow.AddDays(-2)),
+            Domain.Entities.TodoTask.Create(_userId, "Future 2", null, SystemList.Inbox, Priority.P1, null, DateTime.UtcNow.AddDays(7))
+        };
+        _dbContext.Tasks.AddRange(tasks);
+        await _dbContext.SaveChangesAsync();
+
+        var request = CreateAuthenticatedRequest(HttpMethod.Get, "/api/tasks?view=upcoming");
+
+        // Act
+        var response = await _client.SendAsync(request);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var result = await response.Content.ReadFromJsonAsync<GetTasksResponse>(TestJsonHelper.DefaultOptions);
+        Assert.NotNull(result);
+
+        // Find overdue and future tasks
+        var tasksWithDates = result.Tasks.Where(t => t.DueDate.HasValue).ToList();
+        var now = DateTime.UtcNow;
+        var overdueTasks = tasksWithDates.Where(t => t.DueDate!.Value < now).ToList();
+        var futureTasks = tasksWithDates.Where(t => t.DueDate!.Value >= now).ToList();
+
+        // Verify overdue tasks come first
+        if (overdueTasks.Any() && futureTasks.Any())
+        {
+            var lastOverdueIndex = Array.LastIndexOf(result.Tasks, overdueTasks.Last());
+            var firstFutureIndex = Array.IndexOf(result.Tasks, futureTasks.First());
+            Assert.True(lastOverdueIndex < firstFutureIndex, "Overdue tasks should come before future tasks");
+        }
+
+        // Verify overdue tasks are sorted oldest first
+        for (int i = 1; i < overdueTasks.Count; i++)
+        {
+            Assert.True(overdueTasks[i - 1].DueDate <= overdueTasks[i].DueDate,
+                "Overdue tasks should be sorted oldest first");
+        }
+
+        // Verify future tasks are sorted by date ascending
+        for (int i = 1; i < futureTasks.Count; i++)
+        {
+            Assert.True(futureTasks[i - 1].DueDate <= futureTasks[i].DueDate,
+                "Future tasks should be sorted by due date ascending");
+        }
+    }
+
+    [Fact]
+    public async Task GetTasks_UpcomingView_ExcludesArchivedTasks()
+    {
+        // Arrange
+        var archivedTask = Domain.Entities.TodoTask.Create(_userId, "Archived Upcoming", null, SystemList.Upcoming, Priority.P1, null, DateTime.UtcNow.AddDays(3));
+        archivedTask.GetType().GetProperty("Status")!.SetValue(archivedTask, Domain.Enums.TaskStatus.Done);
+        archivedTask.GetType().GetProperty("IsArchived")!.SetValue(archivedTask, true);
+        _dbContext.Tasks.Add(archivedTask);
+        await _dbContext.SaveChangesAsync();
+
+        var request = CreateAuthenticatedRequest(HttpMethod.Get, "/api/tasks?view=upcoming");
+
+        // Act
+        var response = await _client.SendAsync(request);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var result = await response.Content.ReadFromJsonAsync<GetTasksResponse>(TestJsonHelper.DefaultOptions);
+        Assert.NotNull(result);
+
+        // Should not include archived tasks
+        Assert.DoesNotContain(result.Tasks, t => t.Name == "Archived Upcoming");
+        Assert.All(result.Tasks, t => Assert.False(t.IsArchived));
+    }
+
+    [Fact]
+    public async Task GetTasks_UpcomingView_IncludesSystemListValue()
+    {
+        // Arrange
+        var request = CreateAuthenticatedRequest(HttpMethod.Get, "/api/tasks?view=upcoming");
+
+        // Act
+        var response = await _client.SendAsync(request);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var result = await response.Content.ReadFromJsonAsync<GetTasksResponse>(TestJsonHelper.DefaultOptions);
+        Assert.NotNull(result);
+
+        // All tasks should have their original SystemList value preserved
+        Assert.All(result.Tasks, t =>
+        {
+            Assert.True(
+                t.SystemList == SystemList.Inbox ||
+                t.SystemList == SystemList.Next ||
+                t.SystemList == SystemList.Upcoming ||
+                t.SystemList == SystemList.Someday,
+                "Task should have a valid SystemList value");
+        });
+    }
 }

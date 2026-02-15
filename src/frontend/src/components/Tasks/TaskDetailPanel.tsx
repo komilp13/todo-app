@@ -17,12 +17,16 @@ interface TaskDetailPanelProps {
   isOpen: boolean;
   taskId: string | null;
   onClose: () => void;
+  isArchiveView?: boolean;
+  onTaskReopened?: () => void;
 }
 
 export default function TaskDetailPanel({
   isOpen,
   taskId,
   onClose,
+  isArchiveView = false,
+  onTaskReopened,
 }: TaskDetailPanelProps) {
   const [task, setTask] = useState<TodoTask | null>(null);
   const [loading, setLoading] = useState(false);
@@ -88,9 +92,36 @@ export default function TaskDetailPanel({
     }
   };
 
+  // Handle task reopen (for archived tasks)
+  const handleReopen = async () => {
+    if (!task || isSaving) return;
+
+    setIsSaving(true);
+
+    try {
+      const { data } = await apiClient.patch<TodoTask>(
+        `/tasks/${taskId}/reopen`
+      );
+
+      show('Task reopened', { type: 'success' });
+
+      // Notify parent component
+      if (onTaskReopened) {
+        onTaskReopened();
+      }
+    } catch (err) {
+      const errorMessage =
+        err instanceof ApiError ? err.message : 'Failed to reopen task';
+      show(errorMessage, { type: 'error' });
+      console.error('Failed to reopen task:', err);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   // Core field update handler with optimistic updates and rollback
   const handleFieldUpdate = async (field: string, value: any) => {
-    if (!task || isSaving) return;
+    if (!task || isSaving || isArchiveView) return;
 
     // Validate input based on field type
     if (field === 'name' && typeof value === 'string') {
@@ -173,9 +204,22 @@ export default function TaskDetailPanel({
       >
         {/* Header */}
         <div className="flex-shrink-0 border-b border-gray-200 px-6 py-4">
+          {/* Reopen button for archived tasks */}
+          {isArchiveView && task && (
+            <div className="mb-4">
+              <button
+                onClick={handleReopen}
+                disabled={isSaving}
+                className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isSaving ? 'Reopening...' : 'Reopen Task'}
+              </button>
+            </div>
+          )}
+
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1 min-w-0">
-              {editingField === 'name' ? (
+              {editingField === 'name' && !isArchiveView ? (
                 <input
                   type="text"
                   autoFocus
@@ -203,10 +247,16 @@ export default function TaskDetailPanel({
               ) : (
                 <h2
                   onClick={() => {
-                    setEditingField('name');
-                    setEditValue(task?.name || '');
+                    if (!isArchiveView) {
+                      setEditingField('name');
+                      setEditValue(task?.name || '');
+                    }
                   }}
-                  className="text-xl font-bold text-gray-900 break-words cursor-pointer hover:text-blue-600 transition-colors"
+                  className={`text-xl font-bold text-gray-900 break-words ${
+                    isArchiveView
+                      ? 'line-through text-gray-500'
+                      : 'cursor-pointer hover:text-blue-600 transition-colors'
+                  }`}
                 >
                   {task?.name || 'Loading...'}
                 </h2>
@@ -263,7 +313,7 @@ export default function TaskDetailPanel({
                 <h3 className="text-sm font-semibold text-gray-700 mb-2">
                   Description
                 </h3>
-                {editingField === 'description' ? (
+                {editingField === 'description' && !isArchiveView ? (
                   <div className="space-y-1">
                     <textarea
                       autoFocus
@@ -295,10 +345,16 @@ export default function TaskDetailPanel({
                 ) : (
                   <div
                     onClick={() => {
-                      setEditingField('description');
-                      setEditValue(task.description || '');
+                      if (!isArchiveView) {
+                        setEditingField('description');
+                        setEditValue(task.description || '');
+                      }
                     }}
-                    className="text-sm text-gray-600 whitespace-pre-wrap break-words cursor-pointer hover:text-blue-600 transition-colors p-2 rounded hover:bg-blue-50"
+                    className={`text-sm text-gray-600 whitespace-pre-wrap break-words p-2 rounded ${
+                      isArchiveView
+                        ? ''
+                        : 'cursor-pointer hover:text-blue-600 transition-colors hover:bg-blue-50'
+                    }`}
                   >
                     {task.description || (
                       <span className="text-gray-400 italic">
@@ -318,7 +374,7 @@ export default function TaskDetailPanel({
                   {/* Due Date */}
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-gray-600">Due Date:</span>
-                    {editingField === 'dueDate' ? (
+                    {editingField === 'dueDate' && !isArchiveView ? (
                       <div className="flex gap-2">
                         <input
                           type="date"
@@ -344,14 +400,20 @@ export default function TaskDetailPanel({
                     ) : (
                       <span
                         onClick={() => {
-                          setEditingField('dueDate');
-                          setEditValue(
-                            task.dueDate
-                              ? task.dueDate.split('T')[0]
-                              : ''
-                          );
+                          if (!isArchiveView) {
+                            setEditingField('dueDate');
+                            setEditValue(
+                              task.dueDate
+                                ? task.dueDate.split('T')[0]
+                                : ''
+                            );
+                          }
                         }}
-                        className="text-sm font-medium text-gray-900 cursor-pointer hover:text-blue-600 transition-colors p-1 rounded hover:bg-blue-50"
+                        className={`text-sm font-medium text-gray-900 p-1 rounded ${
+                          isArchiveView
+                            ? ''
+                            : 'cursor-pointer hover:text-blue-600 transition-colors hover:bg-blue-50'
+                        }`}
                       >
                         {task.dueDate ? (
                           formatDate(new Date(task.dueDate))
@@ -376,7 +438,7 @@ export default function TaskDetailPanel({
                               ? getPriorityColor(p) + ' text-white'
                               : 'border border-gray-300 text-gray-700 hover:border-gray-400'
                           }`}
-                          disabled={isSaving}
+                          disabled={isSaving || isArchiveView}
                         >
                           {p}
                         </button>
@@ -392,8 +454,8 @@ export default function TaskDetailPanel({
                       onChange={(e) =>
                         handleFieldUpdate('systemList', e.target.value)
                       }
-                      className="text-sm px-2 py-1 border border-gray-300 rounded-md outline-none transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                      disabled={isSaving}
+                      className="text-sm px-2 py-1 border border-gray-300 rounded-md outline-none transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:opacity-60 disabled:cursor-not-allowed"
+                      disabled={isSaving || isArchiveView}
                     >
                       {Object.values(SystemList).map((list) => (
                         <option key={list} value={list}>
@@ -406,7 +468,7 @@ export default function TaskDetailPanel({
                   {/* Project */}
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-gray-600">Project:</span>
-                    {editingField === 'projectId' ? (
+                    {editingField === 'projectId' && !isArchiveView ? (
                       <select
                         autoFocus
                         value={editValue || ''}
@@ -427,10 +489,16 @@ export default function TaskDetailPanel({
                     ) : (
                       <span
                         onClick={() => {
-                          setEditingField('projectId');
-                          setEditValue(task.projectId || '');
+                          if (!isArchiveView) {
+                            setEditingField('projectId');
+                            setEditValue(task.projectId || '');
+                          }
                         }}
-                        className="text-sm font-medium text-gray-900 cursor-pointer hover:text-blue-600 transition-colors p-1 rounded hover:bg-blue-50"
+                        className={`text-sm font-medium text-gray-900 p-1 rounded ${
+                          isArchiveView
+                            ? ''
+                            : 'cursor-pointer hover:text-blue-600 transition-colors hover:bg-blue-50'
+                        }`}
                       >
                         {task.projectId ? (
                           <span className="px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs">

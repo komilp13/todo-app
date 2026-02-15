@@ -820,6 +820,7 @@ Build a multi-user, web-based GTD (Getting Things Done) todo application similar
 ---
 
 #### Story 4.5.1: Build Completed Tasks Archive View — `5 SP`
+- [x] **COMPLETED**
 
 **Description:** Archive view accessible from sidebar. Shows completed tasks sorted by completion date (newest first). Each row: name (strikethrough), completion date, original list. Click opens detail panel with "Reopen" button.
 
@@ -856,6 +857,7 @@ Build a multi-user, web-based GTD (Getting Things Done) todo application similar
 ---
 
 #### Story 5.1.1: Build Inbox List View Page — `3 SP`
+- [x] **COMPLETED**
 
 **Description:** Inbox page at root route displaying tasks with `systemList = Inbox`. Uses `TaskList` component with quick-add, completion, drag-to-reorder.
 
@@ -883,6 +885,7 @@ Build a multi-user, web-based GTD (Getting Things Done) todo application similar
 ---
 
 #### Story 5.2.1: Build Next List View Page — `2 SP`
+- [x] **COMPLETED**
 
 **Description:** Next page at `/next` displaying tasks with `systemList = Next`. Same structure as Inbox with different messaging.
 
@@ -910,6 +913,7 @@ Build a multi-user, web-based GTD (Getting Things Done) todo application similar
 ---
 
 #### Story 5.3.1: Implement Upcoming Tasks Backend Query — `5 SP`
+- [x] **COMPLETED**
 
 **Description:** Specialized query returning tasks with due dates within 14 days OR tasks with `systemList = Upcoming`. Overdue first, then by due date ascending.
 
@@ -926,6 +930,7 @@ Build a multi-user, web-based GTD (Getting Things Done) todo application similar
 ---
 
 #### Story 5.3.2: Build Upcoming List View Page with Date Grouping — `5 SP`
+- [x] **COMPLETED**
 
 **Description:** Upcoming page with tasks grouped by date: "Overdue" (red), "Today", "Tomorrow", specific dates. Tasks within groups sorted by priority. "No date" section for dateless Upcoming-list tasks.
 

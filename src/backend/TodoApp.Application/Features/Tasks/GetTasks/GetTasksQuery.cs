@@ -33,6 +33,11 @@ public class GetTasksQuery
     public bool Archived { get; set; } = false;
 
     /// <summary>
+    /// Special view mode. Options: "upcoming" for date-driven + Upcoming list tasks. Optional.
+    /// </summary>
+    public string? View { get; set; }
+
+    /// <summary>
     /// User ID of the authenticated user. Set by API layer from JWT claims.
     /// </summary>
     public Guid UserId { get; set; }
