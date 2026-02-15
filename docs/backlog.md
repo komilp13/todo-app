@@ -619,7 +619,7 @@ Build a multi-user, web-based GTD (Getting Things Done) todo application similar
 ---
 
 #### Story 4.1.7: Implement Task Sort Order Endpoint — `5 SP`
-- [~] **IN PROGRESS**
+- [x] **COMPLETED**
 
 **Description:** `PATCH /api/tasks/reorder` accepts ordered array of task IDs and updates sort order values. Scoped to same system list, atomic transaction.
 
