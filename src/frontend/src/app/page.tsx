@@ -25,16 +25,6 @@ export default function Home() {
             Register
           </button>
         </div>
-
-        <div className="text-sm text-gray-500">
-          <p>Frontend is loading...</p>
-          <p className="mt-2">
-            API Status:{' '}
-            <span className="inline-block px-2 py-1 bg-yellow-100 text-yellow-800 rounded">
-              Checking...
-            </span>
-          </p>
-        </div>
       </div>
     </main>
   );
