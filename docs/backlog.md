@@ -668,6 +668,7 @@ Build a multi-user, web-based GTD (Getting Things Done) todo application similar
 ---
 
 #### Story 4.2.2: Implement Task Completion Toggle — `5 SP`
+- [x] **COMPLETED**
 
 **Description:** Checkbox click triggers completion animation, calls complete API, task fades out after delay. Undo toast during delay allows reversal.
 
