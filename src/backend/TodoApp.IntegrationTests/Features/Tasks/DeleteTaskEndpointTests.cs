@@ -29,6 +29,9 @@ public class DeleteTaskEndpointTests : IAsyncLifetime
 
     public DeleteTaskEndpointTests()
     {
+        // Use unique database name for each test instance to avoid shared state
+        var uniqueDbName = $"DeleteTaskTests_{Guid.NewGuid()}";
+
         _factory = new WebApplicationFactory<Program>()
             .WithWebHostBuilder(builder =>
             {
@@ -40,7 +43,7 @@ public class DeleteTaskEndpointTests : IAsyncLifetime
                         services.Remove(descriptor);
 
                     services.AddDbContext<ApplicationDbContext>(options =>
-                        options.UseInMemoryDatabase("DeleteTaskTests"));
+                        options.UseInMemoryDatabase(uniqueDbName));
                 });
             });
 
@@ -160,7 +163,8 @@ public class DeleteTaskEndpointTests : IAsyncLifetime
         // Assert
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
 
-        // Verify task labels are deleted
+        // Verify task labels are deleted (clear context cache first since another context modified the database)
+        _dbContext.ChangeTracker.Clear();
         var labelsAfter = await _dbContext.TaskLabels.Where(tl => tl.TaskId == _taskId).ToListAsync();
         Assert.Empty(labelsAfter);
 

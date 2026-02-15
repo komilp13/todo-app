@@ -32,7 +32,17 @@ public class DeleteTaskHandler
             return false;
         }
 
-        // Remove the task (TaskLabel records will be cascade deleted by EF Core)
+        // Explicitly delete associated TaskLabel records (some databases may not handle cascade delete properly)
+        var taskLabels = await _dbContext.TaskLabels
+            .Where(tl => tl.TaskId == command.TaskId)
+            .ToListAsync(cancellationToken);
+
+        if (taskLabels.Any())
+        {
+            _dbContext.TaskLabels.RemoveRange(taskLabels);
+        }
+
+        // Remove the task
         _dbContext.Tasks.Remove(task);
 
         // Save changes

@@ -1,5 +1,7 @@
 namespace TodoApp.Api.Endpoints;
 
+using System.Text.Json;
+
 /// <summary>
 /// Health check endpoints for monitoring application health.
 /// </summary>
@@ -7,13 +9,12 @@ public static class HealthEndpoints
 {
     public static void MapHealthEndpoints(this WebApplication app)
     {
-        app.MapGet("/api/health", GetHealth)
+        app.MapGet("/api/health", (HttpContext context) => GetHealth(context))
             .WithName("GetHealth")
-            .WithOpenApi()
-            .Produces<HealthResponse>(StatusCodes.Status200OK);
+            .WithOpenApi();
     }
 
-    private static IResult GetHealth()
+    private static async Task GetHealth(HttpContext context)
     {
         var response = new HealthResponse
         {
@@ -21,7 +22,11 @@ public static class HealthEndpoints
             Timestamp = DateTime.UtcNow
         };
 
-        return Results.Ok(response);
+        // Manually serialize and write to avoid .NET 9.0 PipeWriter issue in test environment
+        var options = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+        var json = JsonSerializer.Serialize(response, options);
+        context.Response.ContentType = "application/json";
+        await context.Response.WriteAsync(json);
     }
 
     /// <summary>

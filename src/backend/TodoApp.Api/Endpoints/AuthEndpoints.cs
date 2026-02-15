@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
 using TodoApp.Application.Features.Auth.CurrentUser;
 using TodoApp.Application.Features.Auth.Login;
@@ -17,21 +18,21 @@ public static class AuthEndpoints
         var group = app.MapGroup("/api/auth")
             .WithTags("Authentication");
 
-        group.MapPost("/register", Register)
+        group.MapPost("/register", (HttpContext context, RegisterCommand command, IUserRepository userRepository, IPasswordHashingService passwordHashingService, IJwtTokenService jwtTokenService, CancellationToken cancellationToken) => Register(context, command, userRepository, passwordHashingService, jwtTokenService, cancellationToken))
             .WithName("Register")
             .WithOpenApi()
             .Produces<RegisterResponse>(StatusCodes.Status201Created)
             .Produces(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status409Conflict);
 
-        group.MapPost("/login", Login)
+        group.MapPost("/login", (HttpContext context, LoginCommand command, IUserRepository userRepository, IPasswordHashingService passwordHashingService, IJwtTokenService jwtTokenService, CancellationToken cancellationToken) => Login(context, command, userRepository, passwordHashingService, jwtTokenService, cancellationToken))
             .WithName("Login")
             .WithOpenApi()
             .Produces<LoginResponse>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status401Unauthorized);
 
-        group.MapGet("/me", GetCurrentUser)
+        group.MapGet("/me", (HttpContext context, ClaimsPrincipal user, IUserRepository userRepository, CancellationToken cancellationToken) => GetCurrentUser(context, user, userRepository, cancellationToken))
             .WithName("GetCurrentUser")
             .WithOpenApi()
             .RequireAuthorization()
@@ -40,7 +41,8 @@ public static class AuthEndpoints
             .Produces(StatusCodes.Status404NotFound);
     }
 
-    private static async Task<IResult> Register(
+    private static async Task Register(
+        HttpContext context,
         RegisterCommand command,
         IUserRepository userRepository,
         IPasswordHashingService passwordHashingService,
@@ -59,22 +61,34 @@ public static class AuthEndpoints
                     g => g.Key,
                     g => g.Select(e => e.ErrorMessage).ToArray());
 
-            return Results.BadRequest(new { errors });
+            context.Response.StatusCode = StatusCodes.Status400BadRequest;
+            var json = JsonSerializer.Serialize(new { errors });
+            context.Response.ContentType = "application/json";
+            await context.Response.WriteAsync(json);
+            return;
         }
 
         try
         {
             var handler = new RegisterHandler(userRepository, passwordHashingService, jwtTokenService);
             var response = await handler.Handle(command, cancellationToken);
-            return Results.Created($"/api/auth/me", response);
+            context.Response.StatusCode = StatusCodes.Status201Created;
+            context.Response.Headers["Location"] = $"/api/auth/me";
+            var json = JsonSerializer.Serialize(response);
+            context.Response.ContentType = "application/json";
+            await context.Response.WriteAsync(json);
         }
         catch (InvalidOperationException ex) when (ex.Message.Contains("already registered"))
         {
-            return Results.Conflict(new { message = ex.Message });
+            context.Response.StatusCode = StatusCodes.Status409Conflict;
+            var json = JsonSerializer.Serialize(new { message = ex.Message });
+            context.Response.ContentType = "application/json";
+            await context.Response.WriteAsync(json);
         }
     }
 
-    private static async Task<IResult> Login(
+    private static async Task Login(
+        HttpContext context,
         LoginCommand command,
         IUserRepository userRepository,
         IPasswordHashingService passwordHashingService,
@@ -93,22 +107,29 @@ public static class AuthEndpoints
                     g => g.Key,
                     g => g.Select(e => e.ErrorMessage).ToArray());
 
-            return Results.BadRequest(new { errors });
+            context.Response.StatusCode = StatusCodes.Status400BadRequest;
+            var json = JsonSerializer.Serialize(new { errors });
+            context.Response.ContentType = "application/json";
+            await context.Response.WriteAsync(json);
+            return;
         }
 
         try
         {
             var handler = new LoginHandler(userRepository, passwordHashingService, jwtTokenService);
             var response = await handler.Handle(command, cancellationToken);
-            return Results.Ok(response);
+            var json = JsonSerializer.Serialize(response);
+            context.Response.ContentType = "application/json";
+            await context.Response.WriteAsync(json);
         }
         catch (InvalidOperationException ex) when (ex.Message.Contains("Invalid email or password"))
         {
-            return Results.Unauthorized();
+            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
         }
     }
 
-    private static async Task<IResult> GetCurrentUser(
+    private static async Task GetCurrentUser(
+        HttpContext context,
         ClaimsPrincipal user,
         IUserRepository userRepository,
         CancellationToken cancellationToken)
@@ -117,7 +138,8 @@ public static class AuthEndpoints
         var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier);
         if (userIdClaim == null || !Guid.TryParse(userIdClaim.Value, out var userId))
         {
-            return Results.Unauthorized();
+            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+            return;
         }
 
         // Retrieve user from database
@@ -126,9 +148,12 @@ public static class AuthEndpoints
 
         if (response == null)
         {
-            return Results.NotFound();
+            context.Response.StatusCode = StatusCodes.Status404NotFound;
+            return;
         }
 
-        return Results.Ok(response);
+        var json = JsonSerializer.Serialize(response);
+        context.Response.ContentType = "application/json";
+        await context.Response.WriteAsync(json);
     }
 }

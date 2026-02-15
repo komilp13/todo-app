@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TodoApp.Api.Handlers;
@@ -25,7 +26,7 @@ public static class TaskEndpoints
             .WithTags("Tasks")
             .RequireAuthorization();
 
-        group.MapPost("/", CreateTask)
+        group.MapPost("/", (HttpContext context, CreateTaskCommand command, ClaimsPrincipal user, ITaskRepository taskRepository, IProjectRepository projectRepository, CancellationToken cancellationToken) => CreateTask(context, command, user, taskRepository, projectRepository, cancellationToken))
             .WithName("CreateTask")
             .WithOpenApi()
             .Produces<CreateTaskResponse>(StatusCodes.Status201Created)
@@ -33,14 +34,14 @@ public static class TaskEndpoints
             .Produces(StatusCodes.Status401Unauthorized)
             .Produces(StatusCodes.Status404NotFound);
 
-        group.MapGet("/", GetTasks)
+        group.MapGet("/", (HttpContext context, ClaimsPrincipal user, ApplicationDbContext dbContext, [AsParameters] GetTasksQueryParams queryParams, CancellationToken cancellationToken) => GetTasks(context, user, dbContext, queryParams, cancellationToken))
             .WithName("GetTasks")
             .WithOpenApi()
             .Produces<GetTasksResponse>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status401Unauthorized);
 
-        group.MapGet("/{id}", GetTaskById)
+        group.MapGet("/{id}", (HttpContext context, string id, ClaimsPrincipal user, ApplicationDbContext dbContext, CancellationToken cancellationToken) => GetTaskById(context, id, user, dbContext, cancellationToken))
             .WithName("GetTaskById")
             .WithOpenApi()
             .Produces<TaskItemDto>(StatusCodes.Status200OK)
@@ -48,7 +49,7 @@ public static class TaskEndpoints
             .Produces(StatusCodes.Status401Unauthorized)
             .Produces(StatusCodes.Status404NotFound);
 
-        group.MapPut("/{id}", UpdateTask)
+        group.MapPut("/{id}", (HttpContext context, string id, [FromBody] Dictionary<string, object?> requestBody, ClaimsPrincipal user, ApplicationDbContext dbContext, CancellationToken cancellationToken) => UpdateTask(context, id, requestBody, user, dbContext, cancellationToken))
             .WithName("UpdateTask")
             .WithOpenApi()
             .Produces<TaskItemDto>(StatusCodes.Status200OK)
@@ -56,7 +57,7 @@ public static class TaskEndpoints
             .Produces(StatusCodes.Status401Unauthorized)
             .Produces(StatusCodes.Status404NotFound);
 
-        group.MapPatch("/{id}/complete", CompleteTask)
+        group.MapPatch("/{id}/complete", (HttpContext context, string id, ClaimsPrincipal user, ApplicationDbContext dbContext, CancellationToken cancellationToken) => CompleteTask(context, id, user, dbContext, cancellationToken))
             .WithName("CompleteTask")
             .WithOpenApi()
             .Produces<TaskItemDto>(StatusCodes.Status200OK)
@@ -64,7 +65,7 @@ public static class TaskEndpoints
             .Produces(StatusCodes.Status401Unauthorized)
             .Produces(StatusCodes.Status404NotFound);
 
-        group.MapPatch("/{id}/reopen", ReopenTask)
+        group.MapPatch("/{id}/reopen", (HttpContext context, string id, ClaimsPrincipal user, ApplicationDbContext dbContext, CancellationToken cancellationToken) => ReopenTask(context, id, user, dbContext, cancellationToken))
             .WithName("ReopenTask")
             .WithOpenApi()
             .Produces<TaskItemDto>(StatusCodes.Status200OK)
@@ -72,7 +73,7 @@ public static class TaskEndpoints
             .Produces(StatusCodes.Status401Unauthorized)
             .Produces(StatusCodes.Status404NotFound);
 
-        group.MapDelete("/{id}", DeleteTask)
+        group.MapDelete("/{id}", (HttpContext context, string id, ClaimsPrincipal user, ApplicationDbContext dbContext, CancellationToken cancellationToken) => DeleteTask(context, id, user, dbContext, cancellationToken))
             .WithName("DeleteTask")
             .WithOpenApi()
             .Produces(StatusCodes.Status204NoContent)
@@ -81,7 +82,8 @@ public static class TaskEndpoints
             .Produces(StatusCodes.Status404NotFound);
     }
 
-    private static async Task<IResult> CreateTask(
+    private static async Task CreateTask(
+        HttpContext context,
         CreateTaskCommand command,
         ClaimsPrincipal user,
         ITaskRepository taskRepository,
@@ -92,7 +94,8 @@ public static class TaskEndpoints
         var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier);
         if (userIdClaim == null || !Guid.TryParse(userIdClaim.Value, out var userId))
         {
-            return Results.Unauthorized();
+            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+            return;
         }
 
         // Set user ID on the command
@@ -110,26 +113,41 @@ public static class TaskEndpoints
                     g => g.Key,
                     g => g.Select(e => e.ErrorMessage).ToArray());
 
-            return Results.BadRequest(new { errors });
+            context.Response.StatusCode = StatusCodes.Status400BadRequest;
+            var json = JsonSerializer.Serialize(new { errors });
+            context.Response.ContentType = "application/json";
+            await context.Response.WriteAsync(json);
+            return;
         }
 
         try
         {
             var handler = new CreateTaskHandler(taskRepository, projectRepository);
             var response = await handler.Handle(command, cancellationToken);
-            return Results.Created($"/api/tasks/{response.Id}", response);
+            context.Response.StatusCode = StatusCodes.Status201Created;
+            context.Response.Headers["Location"] = $"/api/tasks/{response.Id}";
+            var json = JsonSerializer.Serialize(response);
+            context.Response.ContentType = "application/json";
+            await context.Response.WriteAsync(json);
         }
         catch (InvalidOperationException ex) when (ex.Message.Contains("not found"))
         {
-            return Results.NotFound(new { message = ex.Message });
+            context.Response.StatusCode = StatusCodes.Status404NotFound;
+            var json = JsonSerializer.Serialize(new { message = ex.Message });
+            context.Response.ContentType = "application/json";
+            await context.Response.WriteAsync(json);
         }
         catch (InvalidOperationException ex)
         {
-            return Results.BadRequest(new { message = ex.Message });
+            context.Response.StatusCode = StatusCodes.Status400BadRequest;
+            var json = JsonSerializer.Serialize(new { message = ex.Message });
+            context.Response.ContentType = "application/json";
+            await context.Response.WriteAsync(json);
         }
     }
 
-    private static async Task<IResult> GetTasks(
+    private static async Task GetTasks(
+        HttpContext context,
         ClaimsPrincipal user,
         ApplicationDbContext dbContext,
         [AsParameters] GetTasksQueryParams queryParams,
@@ -139,7 +157,8 @@ public static class TaskEndpoints
         var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier);
         if (userIdClaim == null || !Guid.TryParse(userIdClaim.Value, out var userId))
         {
-            return Results.Unauthorized();
+            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+            return;
         }
 
         // Parse system list if provided
@@ -148,7 +167,11 @@ public static class TaskEndpoints
         {
             if (!Enum.TryParse<Domain.Enums.SystemList>(queryParams.SystemList, ignoreCase: true, out var parsedSystemList))
             {
-                return Results.BadRequest(new { errors = new { systemList = new[] { "SystemList must be a valid value (Inbox, Next, Upcoming, or Someday)." } } });
+                context.Response.StatusCode = StatusCodes.Status400BadRequest;
+                var json = JsonSerializer.Serialize(new { errors = new { systemList = new[] { "SystemList must be a valid value (Inbox, Next, Upcoming, or Someday)." } } });
+                context.Response.ContentType = "application/json";
+                await context.Response.WriteAsync(json);
+                return;
             }
             systemList = parsedSystemList;
         }
@@ -176,17 +199,24 @@ public static class TaskEndpoints
                     g => g.Key,
                     g => g.Select(e => e.ErrorMessage).ToArray());
 
-            return Results.BadRequest(new { errors });
+            context.Response.StatusCode = StatusCodes.Status400BadRequest;
+            var json = JsonSerializer.Serialize(new { errors });
+            context.Response.ContentType = "application/json";
+            await context.Response.WriteAsync(json);
+            return;
         }
 
         // Execute query
         var handler = new GetTasksHandler(dbContext);
         var response = await handler.Handle(query, cancellationToken);
 
-        return Results.Ok(response);
+        var responseJson = JsonSerializer.Serialize(response);
+        context.Response.ContentType = "application/json";
+        await context.Response.WriteAsync(responseJson);
     }
 
-    private static async Task<IResult> GetTaskById(
+    private static async Task GetTaskById(
+        HttpContext context,
         string id,
         ClaimsPrincipal user,
         ApplicationDbContext dbContext,
@@ -196,13 +226,18 @@ public static class TaskEndpoints
         var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier);
         if (userIdClaim == null || !Guid.TryParse(userIdClaim.Value, out var userId))
         {
-            return Results.Unauthorized();
+            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+            return;
         }
 
         // Validate task ID format
         if (!Guid.TryParse(id, out var taskId))
         {
-            return Results.BadRequest(new { errors = new { id = new[] { "Task ID must be a valid GUID." } } });
+            context.Response.StatusCode = StatusCodes.Status400BadRequest;
+            var json = JsonSerializer.Serialize(new { errors = new { id = new[] { "Task ID must be a valid GUID." } } });
+            context.Response.ContentType = "application/json";
+            await context.Response.WriteAsync(json);
+            return;
         }
 
         // Execute query
@@ -211,13 +246,20 @@ public static class TaskEndpoints
 
         if (task == null)
         {
-            return Results.NotFound(new { message = "Task not found or does not belong to the authenticated user." });
+            context.Response.StatusCode = StatusCodes.Status404NotFound;
+            var json = JsonSerializer.Serialize(new { message = "Task not found or does not belong to the authenticated user." });
+            context.Response.ContentType = "application/json";
+            await context.Response.WriteAsync(json);
+            return;
         }
 
-        return Results.Ok(task);
+        var responseJson = JsonSerializer.Serialize(task);
+        context.Response.ContentType = "application/json";
+        await context.Response.WriteAsync(responseJson);
     }
 
-    private static async Task<IResult> UpdateTask(
+    private static async Task UpdateTask(
+        HttpContext context,
         string id,
         [FromBody] Dictionary<string, object?> requestBody,
         ClaimsPrincipal user,
@@ -228,13 +270,18 @@ public static class TaskEndpoints
         var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier);
         if (userIdClaim == null || !Guid.TryParse(userIdClaim.Value, out var userId))
         {
-            return Results.Unauthorized();
+            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+            return;
         }
 
         // Validate task ID format
         if (!Guid.TryParse(id, out var taskId))
         {
-            return Results.BadRequest(new { errors = new { id = new[] { "Task ID must be a valid GUID." } } });
+            context.Response.StatusCode = StatusCodes.Status400BadRequest;
+            var json = JsonSerializer.Serialize(new { errors = new { id = new[] { "Task ID must be a valid GUID." } } });
+            context.Response.ContentType = "application/json";
+            await context.Response.WriteAsync(json);
+            return;
         }
 
         // Build command from request body (only include provided fields)
@@ -308,7 +355,11 @@ public static class TaskEndpoints
                     g => g.Key,
                     g => g.Select(e => e.ErrorMessage).ToArray());
 
-            return Results.BadRequest(new { errors });
+            context.Response.StatusCode = StatusCodes.Status400BadRequest;
+            var json = JsonSerializer.Serialize(new { errors });
+            context.Response.ContentType = "application/json";
+            await context.Response.WriteAsync(json);
+            return;
         }
 
         try
@@ -318,22 +369,35 @@ public static class TaskEndpoints
 
             if (response == null)
             {
-                return Results.NotFound(new { message = "Task not found or does not belong to the authenticated user." });
+                context.Response.StatusCode = StatusCodes.Status404NotFound;
+                var json = JsonSerializer.Serialize(new { message = "Task not found or does not belong to the authenticated user." });
+                context.Response.ContentType = "application/json";
+                await context.Response.WriteAsync(json);
+                return;
             }
 
-            return Results.Ok(response);
+            var responseJson = JsonSerializer.Serialize(response);
+            context.Response.ContentType = "application/json";
+            await context.Response.WriteAsync(responseJson);
         }
         catch (InvalidOperationException ex) when (ex.Message.Contains("not found"))
         {
-            return Results.BadRequest(new { message = ex.Message });
+            context.Response.StatusCode = StatusCodes.Status400BadRequest;
+            var json = JsonSerializer.Serialize(new { message = ex.Message });
+            context.Response.ContentType = "application/json";
+            await context.Response.WriteAsync(json);
         }
         catch (InvalidOperationException ex)
         {
-            return Results.BadRequest(new { message = ex.Message });
+            context.Response.StatusCode = StatusCodes.Status400BadRequest;
+            var json = JsonSerializer.Serialize(new { message = ex.Message });
+            context.Response.ContentType = "application/json";
+            await context.Response.WriteAsync(json);
         }
     }
 
-    private static async Task<IResult> CompleteTask(
+    private static async Task CompleteTask(
+        HttpContext context,
         string id,
         ClaimsPrincipal user,
         ApplicationDbContext dbContext,
@@ -343,13 +407,18 @@ public static class TaskEndpoints
         var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier);
         if (userIdClaim == null || !Guid.TryParse(userIdClaim.Value, out var userId))
         {
-            return Results.Unauthorized();
+            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+            return;
         }
 
         // Validate task ID format
         if (!Guid.TryParse(id, out var taskId))
         {
-            return Results.BadRequest(new { errors = new { id = new[] { "Task ID must be a valid GUID." } } });
+            context.Response.StatusCode = StatusCodes.Status400BadRequest;
+            var json = JsonSerializer.Serialize(new { errors = new { id = new[] { "Task ID must be a valid GUID." } } });
+            context.Response.ContentType = "application/json";
+            await context.Response.WriteAsync(json);
+            return;
         }
 
         try
@@ -359,18 +428,28 @@ public static class TaskEndpoints
 
             if (response == null)
             {
-                return Results.NotFound(new { message = "Task not found or does not belong to the authenticated user." });
+                context.Response.StatusCode = StatusCodes.Status404NotFound;
+                var json = JsonSerializer.Serialize(new { message = "Task not found or does not belong to the authenticated user." });
+                context.Response.ContentType = "application/json";
+                await context.Response.WriteAsync(json);
+                return;
             }
 
-            return Results.Ok(response);
+            var responseJson = JsonSerializer.Serialize(response);
+            context.Response.ContentType = "application/json";
+            await context.Response.WriteAsync(responseJson);
         }
         catch (InvalidOperationException ex)
         {
-            return Results.BadRequest(new { message = ex.Message });
+            context.Response.StatusCode = StatusCodes.Status400BadRequest;
+            var json = JsonSerializer.Serialize(new { message = ex.Message });
+            context.Response.ContentType = "application/json";
+            await context.Response.WriteAsync(json);
         }
     }
 
-    private static async Task<IResult> ReopenTask(
+    private static async Task ReopenTask(
+        HttpContext context,
         string id,
         ClaimsPrincipal user,
         ApplicationDbContext dbContext,
@@ -380,13 +459,18 @@ public static class TaskEndpoints
         var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier);
         if (userIdClaim == null || !Guid.TryParse(userIdClaim.Value, out var userId))
         {
-            return Results.Unauthorized();
+            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+            return;
         }
 
         // Validate task ID format
         if (!Guid.TryParse(id, out var taskId))
         {
-            return Results.BadRequest(new { errors = new { id = new[] { "Task ID must be a valid GUID." } } });
+            context.Response.StatusCode = StatusCodes.Status400BadRequest;
+            var json = JsonSerializer.Serialize(new { errors = new { id = new[] { "Task ID must be a valid GUID." } } });
+            context.Response.ContentType = "application/json";
+            await context.Response.WriteAsync(json);
+            return;
         }
 
         try
@@ -396,18 +480,28 @@ public static class TaskEndpoints
 
             if (response == null)
             {
-                return Results.NotFound(new { message = "Task not found or does not belong to the authenticated user." });
+                context.Response.StatusCode = StatusCodes.Status404NotFound;
+                var json = JsonSerializer.Serialize(new { message = "Task not found or does not belong to the authenticated user." });
+                context.Response.ContentType = "application/json";
+                await context.Response.WriteAsync(json);
+                return;
             }
 
-            return Results.Ok(response);
+            var responseJson = JsonSerializer.Serialize(response);
+            context.Response.ContentType = "application/json";
+            await context.Response.WriteAsync(responseJson);
         }
         catch (InvalidOperationException ex)
         {
-            return Results.BadRequest(new { message = ex.Message });
+            context.Response.StatusCode = StatusCodes.Status400BadRequest;
+            var json = JsonSerializer.Serialize(new { message = ex.Message });
+            context.Response.ContentType = "application/json";
+            await context.Response.WriteAsync(json);
         }
     }
 
-    private static async Task<IResult> DeleteTask(
+    private static async Task DeleteTask(
+        HttpContext context,
         string id,
         ClaimsPrincipal user,
         ApplicationDbContext dbContext,
@@ -417,13 +511,18 @@ public static class TaskEndpoints
         var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier);
         if (userIdClaim == null || !Guid.TryParse(userIdClaim.Value, out var userId))
         {
-            return Results.Unauthorized();
+            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+            return;
         }
 
         // Validate task ID format
         if (!Guid.TryParse(id, out var taskId))
         {
-            return Results.BadRequest(new { errors = new { id = new[] { "Task ID must be a valid GUID." } } });
+            context.Response.StatusCode = StatusCodes.Status400BadRequest;
+            var json = JsonSerializer.Serialize(new { errors = new { id = new[] { "Task ID must be a valid GUID." } } });
+            context.Response.ContentType = "application/json";
+            await context.Response.WriteAsync(json);
+            return;
         }
 
         try
@@ -433,14 +532,21 @@ public static class TaskEndpoints
 
             if (!deleted)
             {
-                return Results.NotFound(new { message = "Task not found or does not belong to the authenticated user." });
+                context.Response.StatusCode = StatusCodes.Status404NotFound;
+                var json = JsonSerializer.Serialize(new { message = "Task not found or does not belong to the authenticated user." });
+                context.Response.ContentType = "application/json";
+                await context.Response.WriteAsync(json);
+                return;
             }
 
-            return Results.NoContent();
+            context.Response.StatusCode = StatusCodes.Status204NoContent;
         }
         catch (InvalidOperationException ex)
         {
-            return Results.BadRequest(new { message = ex.Message });
+            context.Response.StatusCode = StatusCodes.Status400BadRequest;
+            var json = JsonSerializer.Serialize(new { message = ex.Message });
+            context.Response.ContentType = "application/json";
+            await context.Response.WriteAsync(json);
         }
     }
 }

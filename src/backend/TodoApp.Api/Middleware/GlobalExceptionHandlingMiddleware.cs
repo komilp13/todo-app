@@ -1,5 +1,7 @@
 namespace TodoApp.Api.Middleware;
 
+using System.Text.Json;
+
 /// <summary>
 /// Global exception handling middleware that catches unhandled exceptions and returns standardized error responses.
 /// </summary>
@@ -24,6 +26,7 @@ public class GlobalExceptionHandlingMiddleware(RequestDelegate next, ILogger<Glo
         var correlationId = context.TraceIdentifier;
         var response = context.Response;
         response.ContentType = "application/json";
+        response.StatusCode = StatusCodes.Status500InternalServerError;
 
         var errorResponse = new
         {
@@ -33,19 +36,25 @@ public class GlobalExceptionHandlingMiddleware(RequestDelegate next, ILogger<Glo
             timestamp = DateTime.UtcNow
         };
 
-        response.StatusCode = StatusCodes.Status500InternalServerError;
-
-        // Use WriteAsJsonAsync safely without awaiting inside the return statement
+        // Use manual JSON serialization to avoid WriteAsJsonAsync issues in .NET 9.0 test environment
         try
         {
-            await response.WriteAsJsonAsync(errorResponse);
+            var json = JsonSerializer.Serialize(errorResponse);
+            await response.WriteAsync(json);
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Failed to write error response");
+            logger.LogError(ex, "Failed to write error response as JSON");
             // Fallback: write plain text response
-            response.ContentType = "text/plain";
-            await response.WriteAsync("An internal server error occurred.");
+            try
+            {
+                response.ContentType = "text/plain";
+                await response.WriteAsync("An internal server error occurred. Please try again later.");
+            }
+            catch
+            {
+                // Silently ignore if even plain text write fails
+            }
         }
     }
 }
