@@ -775,6 +775,7 @@ Build a multi-user, web-based GTD (Getting Things Done) todo application similar
 ---
 
 #### Story 4.4.2: Implement Inline Editing in Task Detail Panel — `8 SP`
+- [x] **COMPLETED**
 
 **Description:** Each attribute editable inline: name (click to edit, save on blur/Enter), description (click to edit, save on blur), due date (date picker), priority/system list/project (dropdowns), labels (multi-select). Auto-save via `PUT /api/tasks/{id}`.
 

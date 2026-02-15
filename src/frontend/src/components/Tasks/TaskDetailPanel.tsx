@@ -1,15 +1,17 @@
 /**
  * TaskDetailPanel Component
  * Right-sliding side panel displaying complete task details
- * Shows all task attributes in organized sections
- * Read-only display for now (editing in Story 4.4.2)
+ * Shows all task attributes in organized sections with inline editing
+ * Supports editable fields: name, description, due date, priority, system list, project
+ * Auto-saves with optimistic updates and rollback on error (Story 4.4.2)
  */
 
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
-import { TodoTask, Priority, TaskStatus } from '@/types';
+import { TodoTask, Priority, TaskStatus, SystemList } from '@/types';
 import { apiClient, ApiError } from '@/services/apiClient';
+import { useToast } from '@/hooks/useToast';
 
 interface TaskDetailPanelProps {
   isOpen: boolean;
@@ -25,7 +27,11 @@ export default function TaskDetailPanel({
   const [task, setTask] = useState<TodoTask | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [editingField, setEditingField] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState<any>(null);
+  const [isSaving, setIsSaving] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
+  const { show } = useToast();
 
   // Load task data when panel opens or taskId changes
   useEffect(() => {
@@ -53,11 +59,19 @@ export default function TaskDetailPanel({
     fetchTask();
   }, [isOpen, taskId]);
 
-  // Handle Escape key to close
+  // Handle Escape key to close panel (or cancel edit if in edit mode)
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isOpen) {
-        onClose();
+        if (editingField) {
+          // Cancel edit mode without closing panel
+          setEditingField(null);
+          setEditValue(null);
+          e.stopPropagation();
+        } else {
+          // Close panel if not editing
+          onClose();
+        }
       }
     };
 
@@ -65,12 +79,77 @@ export default function TaskDetailPanel({
       window.addEventListener('keydown', handleEscape);
       return () => window.removeEventListener('keydown', handleEscape);
     }
-  }, [isOpen, onClose]);
+  }, [isOpen, editingField, onClose]);
 
   // Close on backdrop click
   const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (e.target === e.currentTarget) {
       onClose();
+    }
+  };
+
+  // Core field update handler with optimistic updates and rollback
+  const handleFieldUpdate = async (field: string, value: any) => {
+    if (!task || isSaving) return;
+
+    // Validate input based on field type
+    if (field === 'name' && typeof value === 'string') {
+      if (value.trim().length === 0) {
+        show('Task name cannot be empty', { type: 'error' });
+        return;
+      }
+      if (value.length > 500) {
+        show('Task name must be 500 characters or less', { type: 'error' });
+        return;
+      }
+    }
+
+    if (field === 'description' && typeof value === 'string') {
+      if (value.length > 4000) {
+        show('Description must be 4000 characters or less', { type: 'error' });
+        return;
+      }
+    }
+
+    // Don't update if value hasn't changed
+    if (task[field as keyof TodoTask] === value) {
+      setEditingField(null);
+      setEditValue(null);
+      return;
+    }
+
+    // Save original state for rollback
+    const originalTask = { ...task };
+
+    // Optimistic update
+    const updatedTask = { ...task, [field]: value };
+    setTask(updatedTask);
+    setIsSaving(true);
+
+    try {
+      // Call API with only the changed field
+      const { data } = await apiClient.put<TodoTask>(`/tasks/${taskId}`, {
+        [field]: value,
+      });
+
+      // Replace with server response
+      setTask(data);
+      setEditingField(null);
+      setEditValue(null);
+
+      // Show success toast with brief duration
+      show('Saved', { type: 'success', duration: 2000 });
+    } catch (err) {
+      // Rollback on error
+      setTask(originalTask);
+
+      // Show error message
+      const errorMessage =
+        err instanceof ApiError ? err.message : 'Failed to save changes';
+      show(errorMessage, { type: 'error' });
+      console.error('Failed to update task field:', field, err);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -96,9 +175,47 @@ export default function TaskDetailPanel({
         <div className="flex-shrink-0 border-b border-gray-200 px-6 py-4">
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1 min-w-0">
-              <h2 className="text-xl font-bold text-gray-900 break-words">
-                {task?.name || 'Loading...'}
-              </h2>
+              {editingField === 'name' ? (
+                <input
+                  type="text"
+                  autoFocus
+                  value={editValue}
+                  onChange={(e) => setEditValue(e.target.value)}
+                  onBlur={() => {
+                    if (editValue.trim() !== task?.name?.trim()) {
+                      handleFieldUpdate('name', editValue.trim());
+                    } else {
+                      setEditingField(null);
+                      setEditValue(null);
+                    }
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.currentTarget.blur();
+                    } else if (e.key === 'Escape') {
+                      setEditingField(null);
+                      setEditValue(null);
+                    }
+                  }}
+                  className="text-xl font-bold text-gray-900 w-full px-2 py-1 rounded-md border border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none"
+                  disabled={isSaving}
+                />
+              ) : (
+                <h2
+                  onClick={() => {
+                    setEditingField('name');
+                    setEditValue(task?.name || '');
+                  }}
+                  className="text-xl font-bold text-gray-900 break-words cursor-pointer hover:text-blue-600 transition-colors"
+                >
+                  {task?.name || 'Loading...'}
+                </h2>
+              )}
+              {editingField === 'name' && (
+                <p className="mt-1 text-xs text-gray-500">
+                  {editValue.length}/500
+                </p>
+              )}
               <p className="mt-1 text-xs text-gray-400">{taskId}</p>
             </div>
             <button
@@ -146,11 +263,50 @@ export default function TaskDetailPanel({
                 <h3 className="text-sm font-semibold text-gray-700 mb-2">
                   Description
                 </h3>
-                <div className="text-sm text-gray-600 whitespace-pre-wrap break-words">
-                  {task.description || (
-                    <span className="text-gray-400 italic">No description</span>
-                  )}
-                </div>
+                {editingField === 'description' ? (
+                  <div className="space-y-1">
+                    <textarea
+                      autoFocus
+                      value={editValue}
+                      onChange={(e) => setEditValue(e.target.value)}
+                      onBlur={() => {
+                        if (editValue.trim() !== task.description?.trim()) {
+                          handleFieldUpdate('description', editValue.trim());
+                        } else {
+                          setEditingField(null);
+                          setEditValue(null);
+                        }
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Escape') {
+                          setEditingField(null);
+                          setEditValue(null);
+                        }
+                      }}
+                      className="w-full px-3 py-2 border rounded-lg text-sm outline-none transition-colors resize-none border-blue-500 focus:ring-2 focus:ring-blue-200"
+                      rows={4}
+                      maxLength={4000}
+                      disabled={isSaving}
+                    />
+                    <p className="text-xs text-gray-500">
+                      {editValue.length}/4000
+                    </p>
+                  </div>
+                ) : (
+                  <div
+                    onClick={() => {
+                      setEditingField('description');
+                      setEditValue(task.description || '');
+                    }}
+                    className="text-sm text-gray-600 whitespace-pre-wrap break-words cursor-pointer hover:text-blue-600 transition-colors p-2 rounded hover:bg-blue-50"
+                  >
+                    {task.description || (
+                      <span className="text-gray-400 italic">
+                        No description
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Properties Section */}
@@ -162,47 +318,129 @@ export default function TaskDetailPanel({
                   {/* Due Date */}
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-gray-600">Due Date:</span>
-                    <span className="text-sm font-medium text-gray-900">
-                      {task.dueDate ? (
-                        formatDate(new Date(task.dueDate))
-                      ) : (
-                        <span className="text-gray-400">No due date</span>
-                      )}
-                    </span>
+                    {editingField === 'dueDate' ? (
+                      <div className="flex gap-2">
+                        <input
+                          type="date"
+                          autoFocus
+                          value={editValue || ''}
+                          onChange={(e) => setEditValue(e.target.value || null)}
+                          onBlur={() => {
+                            handleFieldUpdate('dueDate', editValue);
+                          }}
+                          className="text-sm px-2 py-1 border rounded-md border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none"
+                          disabled={isSaving}
+                        />
+                        {task.dueDate && (
+                          <button
+                            onClick={() => handleFieldUpdate('dueDate', null)}
+                            className="text-xs px-2 py-1 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                            disabled={isSaving}
+                          >
+                            Clear
+                          </button>
+                        )}
+                      </div>
+                    ) : (
+                      <span
+                        onClick={() => {
+                          setEditingField('dueDate');
+                          setEditValue(
+                            task.dueDate
+                              ? task.dueDate.split('T')[0]
+                              : ''
+                          );
+                        }}
+                        className="text-sm font-medium text-gray-900 cursor-pointer hover:text-blue-600 transition-colors p-1 rounded hover:bg-blue-50"
+                      >
+                        {task.dueDate ? (
+                          formatDate(new Date(task.dueDate))
+                        ) : (
+                          <span className="text-gray-400">No due date</span>
+                        )}
+                      </span>
+                    )}
                   </div>
 
                   {/* Priority */}
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-gray-600">Priority:</span>
-                    <span
-                      className={`px-2 py-1 rounded text-xs font-semibold text-white ${getPriorityColor(
-                        task.priority
-                      )}`}
-                    >
-                      {task.priority}
-                    </span>
+                    <div className="flex gap-1">
+                      {Object.values(Priority).map((p) => (
+                        <button
+                          key={p}
+                          type="button"
+                          onClick={() => handleFieldUpdate('priority', p)}
+                          className={`px-2 py-1 rounded text-xs font-semibold transition-colors ${
+                            task.priority === p
+                              ? getPriorityColor(p) + ' text-white'
+                              : 'border border-gray-300 text-gray-700 hover:border-gray-400'
+                          }`}
+                          disabled={isSaving}
+                        >
+                          {p}
+                        </button>
+                      ))}
+                    </div>
                   </div>
 
                   {/* System List */}
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-gray-600">System List:</span>
-                    <span className="text-sm font-medium text-gray-900">
-                      {task.systemList}
-                    </span>
+                    <select
+                      value={task.systemList}
+                      onChange={(e) =>
+                        handleFieldUpdate('systemList', e.target.value)
+                      }
+                      className="text-sm px-2 py-1 border border-gray-300 rounded-md outline-none transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                      disabled={isSaving}
+                    >
+                      {Object.values(SystemList).map((list) => (
+                        <option key={list} value={list}>
+                          {list}
+                        </option>
+                      ))}
+                    </select>
                   </div>
 
                   {/* Project */}
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-gray-600">Project:</span>
-                    <span className="text-sm font-medium text-gray-900">
-                      {task.projectId ? (
-                        <span className="px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs">
-                          Project
-                        </span>
-                      ) : (
-                        <span className="text-gray-400">None</span>
-                      )}
-                    </span>
+                    {editingField === 'projectId' ? (
+                      <select
+                        autoFocus
+                        value={editValue || ''}
+                        onChange={(e) =>
+                          handleFieldUpdate('projectId', e.target.value || null)
+                        }
+                        onBlur={() => {
+                          setEditingField(null);
+                          setEditValue(null);
+                        }}
+                        className="text-sm px-2 py-1 border border-blue-500 rounded-md focus:ring-2 focus:ring-blue-200 outline-none"
+                        disabled={isSaving}
+                      >
+                        <option value="">None</option>
+                        {/* TODO: Fetch projects from API in Epic 6 */}
+                        {/* Projects would be populated here */}
+                      </select>
+                    ) : (
+                      <span
+                        onClick={() => {
+                          setEditingField('projectId');
+                          setEditValue(task.projectId || '');
+                        }}
+                        className="text-sm font-medium text-gray-900 cursor-pointer hover:text-blue-600 transition-colors p-1 rounded hover:bg-blue-50"
+                      >
+                        {task.projectId ? (
+                          <span className="px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs">
+                            Project ID: {task.projectId.slice(0, 8)}...
+                          </span>
+                        ) : (
+                          <span className="text-gray-400">None</span>
+                        )}
+                      </span>
+                    )}
                   </div>
 
                   {/* Labels */}
@@ -211,7 +449,9 @@ export default function TaskDetailPanel({
                       Labels:
                     </span>
                     <div className="flex flex-wrap gap-1">
-                      {/* Labels would be populated by Story 7.1 */}
+                      {/* TODO: Epic 7 - Implement label editing */}
+                      {/* Label multi-select would use: POST /api/tasks/{id}/labels/{labelId} */}
+                      {/* and DELETE /api/tasks/{id}/labels/{labelId} */}
                       <span className="text-xs text-gray-400">
                         No labels assigned
                       </span>
