@@ -65,16 +65,17 @@ export function isOverdue(dateString?: string): boolean {
 
 /**
  * Get priority color class
+ * Note: priority values are now lowercase (p1, p2, p3, p4) to match backend camelCase serialization
  */
 export function getPriorityColor(priority: string): string {
-  switch (priority) {
-    case 'P1':
+  switch (priority.toLowerCase()) {
+    case 'p1':
       return '#ff4440';
-    case 'P2':
+    case 'p2':
       return '#ff9933';
-    case 'P3':
+    case 'p3':
       return '#4073ff';
-    case 'P4':
+    case 'p4':
     default:
       return '#999999';
   }
@@ -82,16 +83,17 @@ export function getPriorityColor(priority: string): string {
 
 /**
  * Get priority color Tailwind class
+ * Note: priority values are now lowercase (p1, p2, p3, p4) to match backend camelCase serialization
  */
 export function getPriorityTailwindClass(priority: string): string {
-  switch (priority) {
-    case 'P1':
+  switch (priority.toLowerCase()) {
+    case 'p1':
       return 'bg-red-100 text-red-800';
-    case 'P2':
+    case 'p2':
       return 'bg-orange-100 text-orange-800';
-    case 'P3':
+    case 'p3':
       return 'bg-blue-100 text-blue-800';
-    case 'P4':
+    case 'p4':
     default:
       return 'bg-gray-100 text-gray-800';
   }

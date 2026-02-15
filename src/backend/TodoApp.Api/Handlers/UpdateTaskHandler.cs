@@ -55,7 +55,7 @@ public class UpdateTaskHandler
             task.UpdateName(command.Name);
         }
 
-        if (command.Description != null)
+        if (command.HasDescription)
         {
             task.UpdateDescription(command.Description);
         }

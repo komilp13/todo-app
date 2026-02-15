@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TodoApp.Api.Extensions;
 using TodoApp.Api.Handlers;
+using TodoApp.Api.Utilities;
 using TodoApp.Application.Features.Tasks.CompleteTask;
 using TodoApp.Application.Features.Tasks.CreateTask;
 using TodoApp.Application.Features.Tasks.DeleteTask;
@@ -14,6 +15,7 @@ using TodoApp.Application.Features.Tasks.UpdateTask;
 using TodoApp.Domain.Enums;
 using TodoApp.Domain.Interfaces;
 using TodoApp.Infrastructure.Persistence;
+using Microsoft.Extensions.Logging;
 
 namespace TodoApp.Api.Endpoints;
 
@@ -275,6 +277,8 @@ public static class TaskEndpoints
         ApplicationDbContext dbContext,
         CancellationToken cancellationToken)
     {
+        var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
+
         // Extract user ID from JWT claims
         var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier);
         if (userIdClaim == null || !Guid.TryParse(userIdClaim.Value, out var userId))
@@ -293,62 +297,105 @@ public static class TaskEndpoints
             return;
         }
 
+        logger.LogInformation("UpdateTask: Received request for task {TaskId} with {FieldCount} fields", taskId, requestBody.Count);
+
         // Build command from request body (only include provided fields)
         var command = new UpdateTaskCommand
         {
             TaskId = taskId,
             UserId = userId,
             HasProjectId = requestBody.ContainsKey("projectId"),
-            HasDueDate = requestBody.ContainsKey("dueDate")
+            HasDueDate = requestBody.ContainsKey("dueDate"),
+            HasDescription = requestBody.ContainsKey("description")
         };
 
-        // Parse optional fields if provided
-        if (requestBody.TryGetValue("name", out var nameValue) && nameValue is string name)
+        // Parse optional fields if provided - handle both string and JsonElement
+        if (requestBody.TryGetValue("name", out var nameValue))
         {
-            command.Name = name;
+            var nameStr = JsonValueExtractor.GetStringValue(nameValue);
+            if (nameStr != null)
+            {
+                command.Name = nameStr;
+                logger.LogDebug("UpdateTask: Parsed name field: {Name}", nameStr);
+            }
         }
 
-        if (requestBody.TryGetValue("description", out var descValue))
+        if (command.HasDescription && requestBody.TryGetValue("description", out var descValue))
         {
-            command.Description = descValue as string;
+            // Description can be explicitly null to clear it
+            command.Description = JsonValueExtractor.GetStringValue(descValue);
+            logger.LogDebug("UpdateTask: Parsed description field: {Description}", command.Description ?? "(null)");
         }
 
-        if (requestBody.TryGetValue("dueDate", out var dueDateValue) && dueDateValue is string dueDateStr)
+        if (command.HasDueDate && requestBody.TryGetValue("dueDate", out var dueDateValue))
         {
-            if (DateTime.TryParse(dueDateStr, out var dueDate))
+            var dueDateStr = JsonValueExtractor.GetStringValue(dueDateValue);
+            if (dueDateStr != null && DateTime.TryParse(dueDateStr, null, System.Globalization.DateTimeStyles.RoundtripKind, out var dueDate))
             {
                 command.DueDate = dueDate;
+                logger.LogDebug("UpdateTask: Parsed dueDate field: {DueDate}", dueDate);
+            }
+            else if (dueDateStr == null)
+            {
+                // Explicitly clear due date
+                command.DueDate = null;
+                logger.LogDebug("UpdateTask: Clearing dueDate field");
             }
         }
 
-        if (requestBody.TryGetValue("priority", out var priorityValue) && priorityValue is string priorityStr)
+        if (requestBody.TryGetValue("priority", out var priorityValue))
         {
-            if (Enum.TryParse<Priority>(priorityStr, ignoreCase: true, out var priority))
+            var priorityStr = JsonValueExtractor.GetStringValue(priorityValue);
+            if (priorityStr != null && Enum.TryParse<Priority>(priorityStr, ignoreCase: true, out var priority))
             {
                 command.Priority = priority;
+                logger.LogDebug("UpdateTask: Parsed priority field: {Priority}", priority);
+            }
+            else if (priorityStr != null)
+            {
+                logger.LogWarning("UpdateTask: Failed to parse priority value: {PriorityStr}", priorityStr);
+                context.Response.StatusCode = StatusCodes.Status400BadRequest;
+                var json = JsonSerializer.Serialize(new { errors = new { priority = new[] { $"Invalid priority value: {priorityStr}. Must be P1, P2, P3, or P4." } } }, JsonDefaults.CamelCase);
+                context.Response.ContentType = "application/json";
+                await context.Response.WriteAsync(json);
+                return;
             }
         }
 
-        if (requestBody.TryGetValue("systemList", out var systemListValue) && systemListValue is string systemListStr)
+        if (requestBody.TryGetValue("systemList", out var systemListValue))
         {
-            if (Enum.TryParse<Domain.Enums.SystemList>(systemListStr, ignoreCase: true, out var systemList))
+            var systemListStr = JsonValueExtractor.GetStringValue(systemListValue);
+            if (systemListStr != null && Enum.TryParse<Domain.Enums.SystemList>(systemListStr, ignoreCase: true, out var systemList))
             {
                 command.SystemList = systemList;
+                logger.LogInformation("UpdateTask: Parsed systemList field: {SystemList}", systemList);
+            }
+            else if (systemListStr != null)
+            {
+                logger.LogWarning("UpdateTask: Failed to parse systemList value: {SystemListStr}", systemListStr);
+                context.Response.StatusCode = StatusCodes.Status400BadRequest;
+                var json = JsonSerializer.Serialize(new { errors = new { systemList = new[] { $"Invalid systemList value: {systemListStr}. Must be Inbox, Next, Upcoming, or Someday." } } }, JsonDefaults.CamelCase);
+                context.Response.ContentType = "application/json";
+                await context.Response.WriteAsync(json);
+                return;
             }
         }
 
         if (requestBody.TryGetValue("projectId", out var projectIdValue))
         {
-            if (projectIdValue is string projectIdStr && !string.IsNullOrEmpty(projectIdStr))
+            var projectIdStr = JsonValueExtractor.GetStringValue(projectIdValue);
+            if (!string.IsNullOrEmpty(projectIdStr))
             {
                 if (Guid.TryParse(projectIdStr, out var projectId))
                 {
                     command.ProjectId = projectId;
+                    logger.LogDebug("UpdateTask: Parsed projectId field: {ProjectId}", projectId);
                 }
             }
-            else if (projectIdValue == null)
+            else if (projectIdValue == null || (projectIdValue is JsonElement element && element.ValueKind == JsonValueKind.Null))
             {
                 command.ProjectId = null; // Explicitly clear project
+                logger.LogDebug("UpdateTask: Clearing projectId field");
             }
         }
 
@@ -364,6 +411,8 @@ public static class TaskEndpoints
                     g => g.Key,
                     g => g.Select(e => e.ErrorMessage).ToArray());
 
+            logger.LogWarning("UpdateTask: Validation failed for task {TaskId}: {@Errors}", taskId, errors);
+
             context.Response.StatusCode = StatusCodes.Status400BadRequest;
             var json = JsonSerializer.Serialize(new { errors }, JsonDefaults.CamelCase);
             context.Response.ContentType = "application/json";
@@ -378,6 +427,7 @@ public static class TaskEndpoints
 
             if (response == null)
             {
+                logger.LogWarning("UpdateTask: Task {TaskId} not found or does not belong to user {UserId}", taskId, userId);
                 context.Response.StatusCode = StatusCodes.Status404NotFound;
                 var json = JsonSerializer.Serialize(new { message = "Task not found or does not belong to the authenticated user." }, JsonDefaults.CamelCase);
                 context.Response.ContentType = "application/json";
@@ -385,12 +435,15 @@ public static class TaskEndpoints
                 return;
             }
 
+            logger.LogInformation("UpdateTask: Successfully updated task {TaskId}", taskId);
+
             var responseJson = JsonSerializer.Serialize(response, JsonDefaults.CamelCase);
             context.Response.ContentType = "application/json";
             await context.Response.WriteAsync(responseJson);
         }
         catch (InvalidOperationException ex) when (ex.Message.Contains("not found"))
         {
+            logger.LogWarning(ex, "UpdateTask: Operation failed for task {TaskId}", taskId);
             context.Response.StatusCode = StatusCodes.Status400BadRequest;
             var json = JsonSerializer.Serialize(new { message = ex.Message }, JsonDefaults.CamelCase);
             context.Response.ContentType = "application/json";
@@ -398,6 +451,7 @@ public static class TaskEndpoints
         }
         catch (InvalidOperationException ex)
         {
+            logger.LogWarning(ex, "UpdateTask: Operation failed for task {TaskId}", taskId);
             context.Response.StatusCode = StatusCodes.Status400BadRequest;
             var json = JsonSerializer.Serialize(new { message = ex.Message }, JsonDefaults.CamelCase);
             context.Response.ContentType = "application/json";

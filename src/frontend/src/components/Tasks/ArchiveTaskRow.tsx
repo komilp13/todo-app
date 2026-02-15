@@ -9,6 +9,7 @@
 
 import { TodoTask } from '@/types';
 import { getPriorityColor } from '@/utils/dateFormatter';
+import { formatSystemList, formatPriority } from '@/utils/enumFormatter';
 
 interface ArchiveTaskRowProps {
   task: TodoTask;
@@ -81,9 +82,9 @@ export default function ArchiveTaskRow({ task, onClick }: ArchiveTaskRowProps) {
           <div
             className="inline-flex items-center h-5 px-2 rounded text-xs font-semibold text-white flex-shrink-0 opacity-60"
             style={{ backgroundColor: priorityColor }}
-            title={`Priority: ${task.priority}`}
+            title={`Priority: ${formatPriority(task.priority)}`}
           >
-            {task.priority}
+            {formatPriority(task.priority)}
           </div>
         </div>
 
@@ -96,7 +97,7 @@ export default function ArchiveTaskRow({ task, onClick }: ArchiveTaskRowProps) {
 
           {/* Original System List Badge */}
           <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-600">
-            {task.systemList}
+            {formatSystemList(task.systemList)}
           </span>
         </div>
       </div>

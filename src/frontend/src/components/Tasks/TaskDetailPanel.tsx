@@ -12,6 +12,7 @@ import { useEffect, useState, useRef } from 'react';
 import { TodoTask, Priority, TaskStatus, SystemList } from '@/types';
 import { apiClient, ApiError } from '@/services/apiClient';
 import { useToast } from '@/hooks/useToast';
+import { formatSystemList, formatPriority } from '@/utils/enumFormatter';
 import ConfirmationModal from '@/components/shared/ConfirmationModal';
 
 interface TaskDetailPanelProps {
@@ -217,7 +218,7 @@ export default function TaskDetailPanel({
 
       // Show success toast - special message for system list changes
       if (field === 'systemList') {
-        show(`Task moved to ${value}`, { type: 'success', duration: 3000 });
+        show(`Task moved to ${formatSystemList(value as SystemList)}`, { type: 'success', duration: 3000 });
 
         // Notify parent to refresh the list view
         if (onTaskMoved && oldSystemList !== value) {
@@ -496,7 +497,7 @@ export default function TaskDetailPanel({
                           }`}
                           disabled={isSaving || isArchiveView}
                         >
-                          {p}
+                          {formatPriority(p)}
                         </button>
                       ))}
                     </div>
@@ -515,7 +516,7 @@ export default function TaskDetailPanel({
                     >
                       {Object.values(SystemList).map((list) => (
                         <option key={list} value={list}>
-                          {list}
+                          {formatSystemList(list)}
                         </option>
                       ))}
                     </select>

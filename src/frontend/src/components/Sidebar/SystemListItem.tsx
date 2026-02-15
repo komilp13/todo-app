@@ -4,6 +4,7 @@ import { SystemList } from '@/types';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ReactNode } from 'react';
+import { formatSystemList } from '@/utils/enumFormatter';
 
 interface SystemListItemProps {
   systemList: SystemList;
@@ -53,7 +54,7 @@ export default function SystemListItem({ systemList, icon, count, onNavigate }: 
           <div className="text-xl">{icon}</div>
 
           {/* List name */}
-          <span className="text-sm font-medium">{systemList}</span>
+          <span className="text-sm font-medium">{formatSystemList(systemList)}</span>
         </div>
 
         {/* Task count badge */}

@@ -10,6 +10,7 @@ import { useState, useEffect, useRef } from 'react';
 import { SystemList, TodoTask } from '@/types';
 import { apiClient, ApiError } from '@/services/apiClient';
 import { useToast } from '@/hooks/useToast';
+import { formatSystemList } from '@/utils/enumFormatter';
 import ConfirmationModal from './ConfirmationModal';
 
 interface TaskContextMenuProps {
@@ -51,13 +52,14 @@ export default function TaskContextMenu({
 
     // Add small delay to prevent immediate close on right-click
     const timer = setTimeout(() => {
-      document.addEventListener('mousedown', handleClickOutside);
+      // Use 'click' instead of 'mousedown' to allow onClick handlers to fire first
+      document.addEventListener('click', handleClickOutside);
       document.addEventListener('keydown', handleEscape);
     }, 100);
 
     return () => {
       clearTimeout(timer);
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('click', handleClickOutside);
       document.removeEventListener('keydown', handleEscape);
     };
   }, [onClose]);
@@ -76,7 +78,7 @@ export default function TaskContextMenu({
         systemList: newList,
       });
 
-      show(`Task moved to ${newList}`, { type: 'success', duration: 3000 });
+      show(`Task moved to ${formatSystemList(newList)}`, { type: 'success', duration: 3000 });
       onClose();
       onTaskMoved?.();
     } catch (err) {
@@ -173,6 +175,12 @@ export default function TaskContextMenu({
         ref={menuRef}
         style={menuStyle}
         className="w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-1 text-sm"
+        // Stop pointer/mouse events from bubbling through React's tree to dnd-kit listeners.
+        // Portal preserves React tree bubbling, so without this, dnd-kit's onPointerDown
+        // on the parent DraggableTaskRow intercepts clicks and prevents onClick from firing.
+        onPointerDown={(e) => e.stopPropagation()}
+        onMouseDown={(e) => e.stopPropagation()}
+        onClick={(e) => e.stopPropagation()}
       >
         {/* Move to submenu */}
         <div className="px-3 py-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">
@@ -185,7 +193,7 @@ export default function TaskContextMenu({
             disabled={isMoving}
             className="w-full text-left px-3 py-2 hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {list}
+            {formatSystemList(list)}
           </button>
         ))}
 

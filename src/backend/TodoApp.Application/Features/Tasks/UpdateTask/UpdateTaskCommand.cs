@@ -56,4 +56,9 @@ public class UpdateTaskCommand
     /// Indicates whether DueDate was explicitly set.
     /// </summary>
     public bool HasDueDate { get; set; }
+
+    /// <summary>
+    /// Indicates whether Description was explicitly set (to distinguish between null and not provided).
+    /// </summary>
+    public bool HasDescription { get; set; }
 }

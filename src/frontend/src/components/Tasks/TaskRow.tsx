@@ -7,12 +7,14 @@
 'use client';
 
 import { useState } from 'react';
-import { TodoTask } from '@/types';
+import { createPortal } from 'react-dom';
+import { TodoTask, TaskStatus } from '@/types';
 import {
   formatRelativeDate,
   getPriorityColor,
   isOverdue,
 } from '@/utils/dateFormatter';
+import { formatSystemList, formatPriority } from '@/utils/enumFormatter';
 import TaskContextMenu from '@/components/shared/TaskContextMenu';
 
 interface TaskRowProps {
@@ -83,7 +85,7 @@ export default function TaskRow({
       {/* Checkbox */}
       <input
         type="checkbox"
-        checked={task.status === 'Done'}
+        checked={task.status === TaskStatus.Done}
         onChange={handleCheckboxChange}
         className="mt-1 h-5 w-5 cursor-pointer rounded border-gray-300 text-blue-600 focus:ring-blue-500"
         aria-label={`Complete task: ${task.name}`}
@@ -95,7 +97,7 @@ export default function TaskRow({
           {/* Task Name */}
           <p
             className={`text-sm font-medium ${
-              task.status === 'Done'
+              task.status === TaskStatus.Done
                 ? 'line-through text-gray-400'
                 : 'text-gray-900'
             }`}
@@ -107,9 +109,9 @@ export default function TaskRow({
           <div
             className="inline-flex items-center h-5 px-2 rounded text-xs font-semibold text-white flex-shrink-0"
             style={{ backgroundColor: priorityColor }}
-            title={`Priority: ${task.priority}`}
+            title={`Priority: ${formatPriority(task.priority)}`}
           >
-            {task.priority}
+            {formatPriority(task.priority)}
           </div>
         </div>
 
@@ -131,7 +133,7 @@ export default function TaskRow({
           {/* System List Badge (for cross-list views like Upcoming) */}
           {showSystemList && (
             <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-50 text-purple-700 border border-purple-200">
-              {task.systemList}
+              {formatSystemList(task.systemList)}
             </span>
           )}
 
@@ -161,8 +163,8 @@ export default function TaskRow({
       </div>
     </div>
 
-    {/* Context Menu */}
-    {showContextMenu && (
+    {/* Context Menu - Rendered in portal to avoid drag handler interference */}
+    {showContextMenu && typeof window !== 'undefined' && createPortal(
       <TaskContextMenu
         task={task}
         position={contextMenuPosition}
@@ -170,7 +172,8 @@ export default function TaskRow({
         onTaskMoved={onTaskMoved}
         onTaskDeleted={onTaskDeleted}
         onEdit={handleEdit}
-      />
+      />,
+      document.body
     )}
   </>
   );

@@ -3,29 +3,29 @@
  * These mirror the backend domain model in TodoApp.Domain
  */
 
-// Enums
+// Enums (values use camelCase to match backend JSON serialization)
 export enum Priority {
-  P1 = 'P1', // Highest
-  P2 = 'P2',
-  P3 = 'P3',
-  P4 = 'P4', // Lowest
+  P1 = 'p1', // Highest
+  P2 = 'p2',
+  P3 = 'p3',
+  P4 = 'p4', // Lowest
 }
 
 export enum TaskStatus {
-  Open = 'Open',
-  Done = 'Done',
+  Open = 'open',
+  Done = 'done',
 }
 
 export enum SystemList {
-  Inbox = 'Inbox',
-  Next = 'Next',
-  Upcoming = 'Upcoming',
-  Someday = 'Someday',
+  Inbox = 'inbox',
+  Next = 'next',
+  Upcoming = 'upcoming',
+  Someday = 'someday',
 }
 
 export enum ProjectStatus {
-  Active = 'Active',
-  Completed = 'Completed',
+  Active = 'active',
+  Completed = 'completed',
 }
 
 // Domain Models
