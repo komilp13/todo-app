@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
+using TodoApp.Api.Extensions;
 using TodoApp.Application.Features.Auth.CurrentUser;
 using TodoApp.Application.Features.Auth.Login;
 using TodoApp.Application.Features.Auth.Register;
@@ -62,7 +63,7 @@ public static class AuthEndpoints
                     g => g.Select(e => e.ErrorMessage).ToArray());
 
             context.Response.StatusCode = StatusCodes.Status400BadRequest;
-            var json = JsonSerializer.Serialize(new { errors });
+            var json = JsonSerializer.Serialize(new { errors }, JsonDefaults.CamelCase);
             context.Response.ContentType = "application/json";
             await context.Response.WriteAsync(json);
             return;
@@ -74,14 +75,14 @@ public static class AuthEndpoints
             var response = await handler.Handle(command, cancellationToken);
             context.Response.StatusCode = StatusCodes.Status201Created;
             context.Response.Headers["Location"] = $"/api/auth/me";
-            var json = JsonSerializer.Serialize(response);
+            var json = JsonSerializer.Serialize(response, JsonDefaults.CamelCase);
             context.Response.ContentType = "application/json";
             await context.Response.WriteAsync(json);
         }
         catch (InvalidOperationException ex) when (ex.Message.Contains("already registered"))
         {
             context.Response.StatusCode = StatusCodes.Status409Conflict;
-            var json = JsonSerializer.Serialize(new { message = ex.Message });
+            var json = JsonSerializer.Serialize(new { message = ex.Message }, JsonDefaults.CamelCase);
             context.Response.ContentType = "application/json";
             await context.Response.WriteAsync(json);
         }
@@ -108,7 +109,7 @@ public static class AuthEndpoints
                     g => g.Select(e => e.ErrorMessage).ToArray());
 
             context.Response.StatusCode = StatusCodes.Status400BadRequest;
-            var json = JsonSerializer.Serialize(new { errors });
+            var json = JsonSerializer.Serialize(new { errors }, JsonDefaults.CamelCase);
             context.Response.ContentType = "application/json";
             await context.Response.WriteAsync(json);
             return;
@@ -118,7 +119,7 @@ public static class AuthEndpoints
         {
             var handler = new LoginHandler(userRepository, passwordHashingService, jwtTokenService);
             var response = await handler.Handle(command, cancellationToken);
-            var json = JsonSerializer.Serialize(response);
+            var json = JsonSerializer.Serialize(response, JsonDefaults.CamelCase);
             context.Response.ContentType = "application/json";
             await context.Response.WriteAsync(json);
         }
@@ -152,7 +153,7 @@ public static class AuthEndpoints
             return;
         }
 
-        var json = JsonSerializer.Serialize(response);
+        var json = JsonSerializer.Serialize(response, JsonDefaults.CamelCase);
         context.Response.ContentType = "application/json";
         await context.Response.WriteAsync(json);
     }

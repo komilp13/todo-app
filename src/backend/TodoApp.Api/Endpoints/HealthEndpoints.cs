@@ -1,6 +1,7 @@
 namespace TodoApp.Api.Endpoints;
 
 using System.Text.Json;
+using TodoApp.Api.Extensions;
 
 /// <summary>
 /// Health check endpoints for monitoring application health.
@@ -23,8 +24,7 @@ public static class HealthEndpoints
         };
 
         // Manually serialize and write to avoid .NET 9.0 PipeWriter issue in test environment
-        var options = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
-        var json = JsonSerializer.Serialize(response, options);
+        var json = JsonSerializer.Serialize(response, JsonDefaults.CamelCase);
         context.Response.ContentType = "application/json";
         await context.Response.WriteAsync(json);
     }

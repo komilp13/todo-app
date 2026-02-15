@@ -35,10 +35,10 @@ export default function TaskList({
       setError(null);
 
       try {
-        const { data } = await apiClient.get<TodoTask[]>(
+        const { data } = await apiClient.get<{ tasks: TodoTask[], totalCount: number }>(
           `/tasks?systemList=${systemList}`
         );
-        setTasks(data);
+        setTasks(data.tasks);
       } catch (err) {
         console.error('Failed to fetch tasks:', err);
         setError('Failed to load tasks. Please try again.');

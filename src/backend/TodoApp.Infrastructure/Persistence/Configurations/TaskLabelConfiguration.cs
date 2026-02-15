@@ -14,9 +14,11 @@ public class TaskLabelConfiguration : IEntityTypeConfiguration<TaskLabel>
         builder.HasKey(x => new { x.TaskId, x.LabelId });
 
         builder.Property(x => x.TaskId)
+            .HasColumnName("task_id")
             .HasColumnType("uuid");
 
         builder.Property(x => x.LabelId)
+            .HasColumnName("label_id")
             .HasColumnType("uuid");
 
         // Foreign keys

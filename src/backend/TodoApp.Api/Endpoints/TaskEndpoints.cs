@@ -2,6 +2,7 @@ using System.Security.Claims;
 using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using TodoApp.Api.Extensions;
 using TodoApp.Api.Handlers;
 using TodoApp.Application.Features.Tasks.CompleteTask;
 using TodoApp.Application.Features.Tasks.CreateTask;
@@ -122,7 +123,7 @@ public static class TaskEndpoints
                     g => g.Select(e => e.ErrorMessage).ToArray());
 
             context.Response.StatusCode = StatusCodes.Status400BadRequest;
-            var json = JsonSerializer.Serialize(new { errors });
+            var json = JsonSerializer.Serialize(new { errors }, JsonDefaults.CamelCase);
             context.Response.ContentType = "application/json";
             await context.Response.WriteAsync(json);
             return;
@@ -134,21 +135,21 @@ public static class TaskEndpoints
             var response = await handler.Handle(command, cancellationToken);
             context.Response.StatusCode = StatusCodes.Status201Created;
             context.Response.Headers["Location"] = $"/api/tasks/{response.Id}";
-            var json = JsonSerializer.Serialize(response);
+            var json = JsonSerializer.Serialize(response, JsonDefaults.CamelCase);
             context.Response.ContentType = "application/json";
             await context.Response.WriteAsync(json);
         }
         catch (InvalidOperationException ex) when (ex.Message.Contains("not found"))
         {
             context.Response.StatusCode = StatusCodes.Status404NotFound;
-            var json = JsonSerializer.Serialize(new { message = ex.Message });
+            var json = JsonSerializer.Serialize(new { message = ex.Message }, JsonDefaults.CamelCase);
             context.Response.ContentType = "application/json";
             await context.Response.WriteAsync(json);
         }
         catch (InvalidOperationException ex)
         {
             context.Response.StatusCode = StatusCodes.Status400BadRequest;
-            var json = JsonSerializer.Serialize(new { message = ex.Message });
+            var json = JsonSerializer.Serialize(new { message = ex.Message }, JsonDefaults.CamelCase);
             context.Response.ContentType = "application/json";
             await context.Response.WriteAsync(json);
         }
@@ -176,7 +177,7 @@ public static class TaskEndpoints
             if (!Enum.TryParse<Domain.Enums.SystemList>(queryParams.SystemList, ignoreCase: true, out var parsedSystemList))
             {
                 context.Response.StatusCode = StatusCodes.Status400BadRequest;
-                var json = JsonSerializer.Serialize(new { errors = new { systemList = new[] { "SystemList must be a valid value (Inbox, Next, Upcoming, or Someday)." } } });
+                var json = JsonSerializer.Serialize(new { errors = new { systemList = new[] { "SystemList must be a valid value (Inbox, Next, Upcoming, or Someday)." } } }, JsonDefaults.CamelCase);
                 context.Response.ContentType = "application/json";
                 await context.Response.WriteAsync(json);
                 return;
@@ -208,7 +209,7 @@ public static class TaskEndpoints
                     g => g.Select(e => e.ErrorMessage).ToArray());
 
             context.Response.StatusCode = StatusCodes.Status400BadRequest;
-            var json = JsonSerializer.Serialize(new { errors });
+            var json = JsonSerializer.Serialize(new { errors }, JsonDefaults.CamelCase);
             context.Response.ContentType = "application/json";
             await context.Response.WriteAsync(json);
             return;
@@ -218,7 +219,7 @@ public static class TaskEndpoints
         var handler = new GetTasksHandler(dbContext);
         var response = await handler.Handle(query, cancellationToken);
 
-        var responseJson = JsonSerializer.Serialize(response);
+        var responseJson = JsonSerializer.Serialize(response, JsonDefaults.CamelCase);
         context.Response.ContentType = "application/json";
         await context.Response.WriteAsync(responseJson);
     }
@@ -242,7 +243,7 @@ public static class TaskEndpoints
         if (!Guid.TryParse(id, out var taskId))
         {
             context.Response.StatusCode = StatusCodes.Status400BadRequest;
-            var json = JsonSerializer.Serialize(new { errors = new { id = new[] { "Task ID must be a valid GUID." } } });
+            var json = JsonSerializer.Serialize(new { errors = new { id = new[] { "Task ID must be a valid GUID." } } }, JsonDefaults.CamelCase);
             context.Response.ContentType = "application/json";
             await context.Response.WriteAsync(json);
             return;
@@ -255,13 +256,13 @@ public static class TaskEndpoints
         if (task == null)
         {
             context.Response.StatusCode = StatusCodes.Status404NotFound;
-            var json = JsonSerializer.Serialize(new { message = "Task not found or does not belong to the authenticated user." });
+            var json = JsonSerializer.Serialize(new { message = "Task not found or does not belong to the authenticated user." }, JsonDefaults.CamelCase);
             context.Response.ContentType = "application/json";
             await context.Response.WriteAsync(json);
             return;
         }
 
-        var responseJson = JsonSerializer.Serialize(task);
+        var responseJson = JsonSerializer.Serialize(task, JsonDefaults.CamelCase);
         context.Response.ContentType = "application/json";
         await context.Response.WriteAsync(responseJson);
     }
@@ -286,7 +287,7 @@ public static class TaskEndpoints
         if (!Guid.TryParse(id, out var taskId))
         {
             context.Response.StatusCode = StatusCodes.Status400BadRequest;
-            var json = JsonSerializer.Serialize(new { errors = new { id = new[] { "Task ID must be a valid GUID." } } });
+            var json = JsonSerializer.Serialize(new { errors = new { id = new[] { "Task ID must be a valid GUID." } } }, JsonDefaults.CamelCase);
             context.Response.ContentType = "application/json";
             await context.Response.WriteAsync(json);
             return;
@@ -364,7 +365,7 @@ public static class TaskEndpoints
                     g => g.Select(e => e.ErrorMessage).ToArray());
 
             context.Response.StatusCode = StatusCodes.Status400BadRequest;
-            var json = JsonSerializer.Serialize(new { errors });
+            var json = JsonSerializer.Serialize(new { errors }, JsonDefaults.CamelCase);
             context.Response.ContentType = "application/json";
             await context.Response.WriteAsync(json);
             return;
@@ -378,27 +379,27 @@ public static class TaskEndpoints
             if (response == null)
             {
                 context.Response.StatusCode = StatusCodes.Status404NotFound;
-                var json = JsonSerializer.Serialize(new { message = "Task not found or does not belong to the authenticated user." });
+                var json = JsonSerializer.Serialize(new { message = "Task not found or does not belong to the authenticated user." }, JsonDefaults.CamelCase);
                 context.Response.ContentType = "application/json";
                 await context.Response.WriteAsync(json);
                 return;
             }
 
-            var responseJson = JsonSerializer.Serialize(response);
+            var responseJson = JsonSerializer.Serialize(response, JsonDefaults.CamelCase);
             context.Response.ContentType = "application/json";
             await context.Response.WriteAsync(responseJson);
         }
         catch (InvalidOperationException ex) when (ex.Message.Contains("not found"))
         {
             context.Response.StatusCode = StatusCodes.Status400BadRequest;
-            var json = JsonSerializer.Serialize(new { message = ex.Message });
+            var json = JsonSerializer.Serialize(new { message = ex.Message }, JsonDefaults.CamelCase);
             context.Response.ContentType = "application/json";
             await context.Response.WriteAsync(json);
         }
         catch (InvalidOperationException ex)
         {
             context.Response.StatusCode = StatusCodes.Status400BadRequest;
-            var json = JsonSerializer.Serialize(new { message = ex.Message });
+            var json = JsonSerializer.Serialize(new { message = ex.Message }, JsonDefaults.CamelCase);
             context.Response.ContentType = "application/json";
             await context.Response.WriteAsync(json);
         }
@@ -423,7 +424,7 @@ public static class TaskEndpoints
         if (!Guid.TryParse(id, out var taskId))
         {
             context.Response.StatusCode = StatusCodes.Status400BadRequest;
-            var json = JsonSerializer.Serialize(new { errors = new { id = new[] { "Task ID must be a valid GUID." } } });
+            var json = JsonSerializer.Serialize(new { errors = new { id = new[] { "Task ID must be a valid GUID." } } }, JsonDefaults.CamelCase);
             context.Response.ContentType = "application/json";
             await context.Response.WriteAsync(json);
             return;
@@ -437,20 +438,20 @@ public static class TaskEndpoints
             if (response == null)
             {
                 context.Response.StatusCode = StatusCodes.Status404NotFound;
-                var json = JsonSerializer.Serialize(new { message = "Task not found or does not belong to the authenticated user." });
+                var json = JsonSerializer.Serialize(new { message = "Task not found or does not belong to the authenticated user." }, JsonDefaults.CamelCase);
                 context.Response.ContentType = "application/json";
                 await context.Response.WriteAsync(json);
                 return;
             }
 
-            var responseJson = JsonSerializer.Serialize(response);
+            var responseJson = JsonSerializer.Serialize(response, JsonDefaults.CamelCase);
             context.Response.ContentType = "application/json";
             await context.Response.WriteAsync(responseJson);
         }
         catch (InvalidOperationException ex)
         {
             context.Response.StatusCode = StatusCodes.Status400BadRequest;
-            var json = JsonSerializer.Serialize(new { message = ex.Message });
+            var json = JsonSerializer.Serialize(new { message = ex.Message }, JsonDefaults.CamelCase);
             context.Response.ContentType = "application/json";
             await context.Response.WriteAsync(json);
         }
@@ -475,7 +476,7 @@ public static class TaskEndpoints
         if (!Guid.TryParse(id, out var taskId))
         {
             context.Response.StatusCode = StatusCodes.Status400BadRequest;
-            var json = JsonSerializer.Serialize(new { errors = new { id = new[] { "Task ID must be a valid GUID." } } });
+            var json = JsonSerializer.Serialize(new { errors = new { id = new[] { "Task ID must be a valid GUID." } } }, JsonDefaults.CamelCase);
             context.Response.ContentType = "application/json";
             await context.Response.WriteAsync(json);
             return;
@@ -489,20 +490,20 @@ public static class TaskEndpoints
             if (response == null)
             {
                 context.Response.StatusCode = StatusCodes.Status404NotFound;
-                var json = JsonSerializer.Serialize(new { message = "Task not found or does not belong to the authenticated user." });
+                var json = JsonSerializer.Serialize(new { message = "Task not found or does not belong to the authenticated user." }, JsonDefaults.CamelCase);
                 context.Response.ContentType = "application/json";
                 await context.Response.WriteAsync(json);
                 return;
             }
 
-            var responseJson = JsonSerializer.Serialize(response);
+            var responseJson = JsonSerializer.Serialize(response, JsonDefaults.CamelCase);
             context.Response.ContentType = "application/json";
             await context.Response.WriteAsync(responseJson);
         }
         catch (InvalidOperationException ex)
         {
             context.Response.StatusCode = StatusCodes.Status400BadRequest;
-            var json = JsonSerializer.Serialize(new { message = ex.Message });
+            var json = JsonSerializer.Serialize(new { message = ex.Message }, JsonDefaults.CamelCase);
             context.Response.ContentType = "application/json";
             await context.Response.WriteAsync(json);
         }
@@ -527,7 +528,7 @@ public static class TaskEndpoints
         if (!Guid.TryParse(id, out var taskId))
         {
             context.Response.StatusCode = StatusCodes.Status400BadRequest;
-            var json = JsonSerializer.Serialize(new { errors = new { id = new[] { "Task ID must be a valid GUID." } } });
+            var json = JsonSerializer.Serialize(new { errors = new { id = new[] { "Task ID must be a valid GUID." } } }, JsonDefaults.CamelCase);
             context.Response.ContentType = "application/json";
             await context.Response.WriteAsync(json);
             return;
@@ -541,7 +542,7 @@ public static class TaskEndpoints
             if (!deleted)
             {
                 context.Response.StatusCode = StatusCodes.Status404NotFound;
-                var json = JsonSerializer.Serialize(new { message = "Task not found or does not belong to the authenticated user." });
+                var json = JsonSerializer.Serialize(new { message = "Task not found or does not belong to the authenticated user." }, JsonDefaults.CamelCase);
                 context.Response.ContentType = "application/json";
                 await context.Response.WriteAsync(json);
                 return;
@@ -552,7 +553,7 @@ public static class TaskEndpoints
         catch (InvalidOperationException ex)
         {
             context.Response.StatusCode = StatusCodes.Status400BadRequest;
-            var json = JsonSerializer.Serialize(new { message = ex.Message });
+            var json = JsonSerializer.Serialize(new { message = ex.Message }, JsonDefaults.CamelCase);
             context.Response.ContentType = "application/json";
             await context.Response.WriteAsync(json);
         }
@@ -584,7 +585,7 @@ public static class TaskEndpoints
             var errors = validationResult.Errors
                 .GroupBy(e => e.PropertyName)
                 .ToDictionary(g => g.Key, g => g.Select(e => e.ErrorMessage).ToArray());
-            var json = JsonSerializer.Serialize(new { errors });
+            var json = JsonSerializer.Serialize(new { errors }, JsonDefaults.CamelCase);
             context.Response.ContentType = "application/json";
             await context.Response.WriteAsync(json);
             return;
@@ -596,14 +597,14 @@ public static class TaskEndpoints
             var response = await handler.Handle(command, cancellationToken);
 
             context.Response.StatusCode = StatusCodes.Status200OK;
-            var json = JsonSerializer.Serialize(response);
+            var json = JsonSerializer.Serialize(response, JsonDefaults.CamelCase);
             context.Response.ContentType = "application/json";
             await context.Response.WriteAsync(json);
         }
         catch (InvalidOperationException ex)
         {
             context.Response.StatusCode = StatusCodes.Status400BadRequest;
-            var json = JsonSerializer.Serialize(new { message = ex.Message });
+            var json = JsonSerializer.Serialize(new { message = ex.Message }, JsonDefaults.CamelCase);
             context.Response.ContentType = "application/json";
             await context.Response.WriteAsync(json);
         }

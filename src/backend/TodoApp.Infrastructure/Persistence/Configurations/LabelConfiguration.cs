@@ -14,23 +14,28 @@ public class LabelConfiguration : IEntityTypeConfiguration<Label>
         builder.HasKey(x => x.Id);
 
         builder.Property(x => x.Id)
+            .HasColumnName("id")
             .HasColumnType("uuid")
             .ValueGeneratedNever();
 
         builder.Property(x => x.UserId)
+            .HasColumnName("user_id")
             .HasColumnType("uuid")
             .IsRequired();
 
         builder.Property(x => x.Name)
+            .HasColumnName("name")
             .IsRequired()
             .HasMaxLength(100)
             .HasColumnType("text");
 
         builder.Property(x => x.Color)
+            .HasColumnName("color")
             .HasMaxLength(7)
             .HasColumnType("text");
 
         builder.Property(x => x.CreatedAt)
+            .HasColumnName("created_at")
             .HasColumnType("timestamp with time zone")
             .ValueGeneratedNever();
 

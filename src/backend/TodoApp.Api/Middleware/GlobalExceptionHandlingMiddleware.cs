@@ -1,6 +1,7 @@
 namespace TodoApp.Api.Middleware;
 
 using System.Text.Json;
+using TodoApp.Api.Extensions;
 
 /// <summary>
 /// Global exception handling middleware that catches unhandled exceptions and returns standardized error responses.
@@ -39,7 +40,7 @@ public class GlobalExceptionHandlingMiddleware(RequestDelegate next, ILogger<Glo
         // Use manual JSON serialization to avoid WriteAsJsonAsync issues in .NET 9.0 test environment
         try
         {
-            var json = JsonSerializer.Serialize(errorResponse);
+            var json = JsonSerializer.Serialize(errorResponse, JsonDefaults.CamelCase);
             await response.WriteAsync(json);
         }
         catch (Exception ex)
