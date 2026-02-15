@@ -3,15 +3,31 @@
  * Fetches and displays tasks for a given system list
  * Shows loading skeleton, empty state, and handles task interactions
  * Supports task completion with animation and undo toast
+ * Supports drag-and-drop reordering with dnd-kit
  */
 
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
 import { TodoTask, SystemList, TaskStatus } from '@/types';
 import { apiClient, ApiError } from '@/services/apiClient';
 import { useToast } from '@/hooks/useToast';
-import TaskRow from './TaskRow';
+import DraggableTaskRow from './DraggableTaskRow';
 import TaskListSkeleton from './TaskListSkeleton';
 import ToastContainer from '../Toast/ToastContainer';
 
@@ -41,8 +57,34 @@ export default function TaskList({
   const [animatingOutTaskIds, setAnimatingOutTaskIds] = useState<Set<string>>(
     new Set()
   );
+  const [isReordering, setIsReordering] = useState(false);
   const completingTasksRef = useRef<Map<string, CompletingTask>>(new Map());
   const { toasts, show, dismiss } = useToast();
+
+  // Detect if on mobile (disable drag-drop on mobile or use long-press)
+  const [isMobile, setIsMobile] = useState(false);
+
+  // dnd-kit sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(TouchSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const taskIds = useMemo(() => tasks.map((t) => t.id), [tasks]);
+
+  // Detect mobile on mount and window resize
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 1024);
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   useEffect(() => {
     const fetchTasks = async () => {
@@ -201,6 +243,52 @@ export default function TaskList({
     }
   };
 
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (!over || active.id === over.id) {
+      return;
+    }
+
+    // Get the old and new index
+    const oldIndex = tasks.findIndex((t) => t.id === active.id);
+    const newIndex = tasks.findIndex((t) => t.id === over.id);
+
+    if (oldIndex === -1 || newIndex === -1) {
+      return;
+    }
+
+    // Optimistically reorder local state
+    const reorderedTasks = [...tasks];
+    const [movedTask] = reorderedTasks.splice(oldIndex, 1);
+    reorderedTasks.splice(newIndex, 0, movedTask);
+
+    setTasks(reorderedTasks);
+    setIsReordering(true);
+
+    try {
+      // Call API to persist reorder
+      const taskIds = reorderedTasks.map((t) => t.id);
+      await apiClient.patch('/tasks/reorder', {
+        taskIds,
+        systemList,
+      });
+
+      show('Tasks reordered', { type: 'success' });
+    } catch (err) {
+      // Rollback on failure
+      setTasks(tasks);
+      console.error('Failed to reorder tasks:', err);
+      if (err instanceof ApiError) {
+        show(err.message || 'Failed to reorder tasks', { type: 'error' });
+      } else {
+        show('Failed to reorder tasks', { type: 'error' });
+      }
+    } finally {
+      setIsReordering(false);
+    }
+  };
+
   if (loading) {
     return <TaskListSkeleton />;
   }
@@ -226,17 +314,30 @@ export default function TaskList({
 
   return (
     <>
-      <div className="space-y-2">
-        {tasks.map((task) => (
-          <TaskRow
-            key={task.id}
-            task={task}
-            onComplete={handleTaskComplete}
-            onClick={onTaskClick}
-            isAnimatingOut={animatingOutTaskIds.has(task.id)}
-          />
-        ))}
-      </div>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={handleDragEnd}
+      >
+        <SortableContext
+          items={taskIds}
+          strategy={verticalListSortingStrategy}
+          disabled={isMobile || isReordering}
+        >
+          <div className="space-y-2">
+            {tasks.map((task) => (
+              <DraggableTaskRow
+                key={task.id}
+                task={task}
+                onComplete={handleTaskComplete}
+                onClick={onTaskClick}
+                isAnimatingOut={animatingOutTaskIds.has(task.id)}
+                isDragDisabled={isMobile}
+              />
+            ))}
+          </div>
+        </SortableContext>
+      </DndContext>
       <ToastContainer toasts={toasts} onDismiss={dismiss} />
     </>
   );

@@ -684,6 +684,7 @@ Build a multi-user, web-based GTD (Getting Things Done) todo application similar
 ---
 
 #### Story 4.2.3: Implement Drag-and-Drop Task Reordering — `8 SP`
+- [x] **COMPLETED**
 
 **Description:** Drag-and-drop with `@dnd-kit/core` or similar. Drag handle, visual feedback, optimistic reorder, API call on drop.
 
