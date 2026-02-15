@@ -50,7 +50,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Call GET /api/auth/me to validate token and get user data
       const response = await apiClient.get<User>('/auth/me');
       setUser(response.data);
-      setIsLoading(false);
     } catch (error: any) {
       // Token is invalid or expired
       if (error.statusCode === 401 || error.statusCode === 404) {
@@ -60,7 +59,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (pathname && pathname !== '/login' && pathname !== '/register') {
           router.push('/login');
         }
+      } else {
+        // For network errors or other issues, just clear user state
+        // This allows the login page to function even if backend is unreachable
+        setUser(null);
+        console.warn('Token validation failed:', error.message);
       }
+    } finally {
       setIsLoading(false);
     }
   }, [pathname, router]);

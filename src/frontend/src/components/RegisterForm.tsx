@@ -8,12 +8,14 @@ import Link from 'next/link';
 import { registerSchema, type RegisterFormData } from '@/lib/validation';
 import { apiClient } from '@/services/apiClient';
 import { useAuth } from '@/contexts/AuthContext';
+import { useApiHealth } from '@/hooks/useApiHealth';
 
 export default function RegisterForm() {
   const router = useRouter();
   const { login } = useAuth();
   const [apiError, setApiError] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { isHealthy, error: healthError } = useApiHealth();
 
   const {
     register,
@@ -43,7 +45,14 @@ export default function RegisterForm() {
       }
     } catch (error: any) {
       // Handle different error scenarios
-      if (error.statusCode === 409) {
+      if (error.statusCode === 0) {
+        // Network error - API is unreachable
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+        setApiError(
+          `Cannot connect to the server at ${apiUrl}. Please ensure the backend is running.`
+        );
+        console.error('Network error - Backend unreachable:', apiUrl, error);
+      } else if (error.statusCode === 409) {
         setError('email', {
           type: 'manual',
           message: 'Email already registered',
@@ -66,9 +75,9 @@ export default function RegisterForm() {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="w-full max-w-md space-y-4">
-      {apiError && (
+      {(apiError || healthError) && (
         <div className="rounded-md bg-red-50 p-3 text-sm text-red-700">
-          {apiError}
+          {apiError || healthError}
         </div>
       )}
 
