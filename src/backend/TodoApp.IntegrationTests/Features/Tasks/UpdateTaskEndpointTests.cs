@@ -8,6 +8,7 @@ using TodoApp.Application.Features.Tasks.GetTasks;
 using TodoApp.Application.Features.Tasks.UpdateTask;
 using TodoApp.Domain.Enums;
 using TodoApp.Infrastructure.Persistence;
+using TodoApp.IntegrationTests.Base;
 using Xunit;
 
 namespace TodoApp.IntegrationTests.Features.Tasks;
@@ -71,7 +72,7 @@ public class UpdateTaskEndpointTests : IAsyncLifetime
             var errorContent = await registerResponse.Content.ReadAsStringAsync();
             throw new InvalidOperationException($"Register failed: {registerResponse.StatusCode} - {errorContent}");
         }
-        var registerResult = await registerResponse.Content.ReadFromJsonAsync<RegisterResponse>();
+        var registerResult = await registerResponse.Content.ReadFromJsonAsync<RegisterResponse>(TestJsonHelper.DefaultOptions);
         _authToken = registerResult!.Token;
 
         var user = await _dbContext.Users.FirstAsync(u => u.Email == "updatetask@example.com");
@@ -91,7 +92,7 @@ public class UpdateTaskEndpointTests : IAsyncLifetime
             var errorContent = await registerResponse2.Content.ReadAsStringAsync();
             throw new InvalidOperationException($"Register failed: {registerResponse2.StatusCode} - {errorContent}");
         }
-        var registerResult2 = await registerResponse2.Content.ReadFromJsonAsync<RegisterResponse>();
+        var registerResult2 = await registerResponse2.Content.ReadFromJsonAsync<RegisterResponse>(TestJsonHelper.DefaultOptions);
         _otherUserToken = registerResult2!.Token;
 
         var otherUser = await _dbContext.Users.FirstAsync(u => u.Email == "otheruserfortask@example.com");
@@ -144,7 +145,7 @@ public class UpdateTaskEndpointTests : IAsyncLifetime
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var task = await response.Content.ReadFromJsonAsync<TaskItemDto>();
+        var task = await response.Content.ReadFromJsonAsync<TaskItemDto>(TestJsonHelper.DefaultOptions);
         Assert.NotNull(task);
         Assert.Equal(_taskId, task.Id);
         Assert.Equal("Updated Task Name", task.Name);
@@ -164,7 +165,7 @@ public class UpdateTaskEndpointTests : IAsyncLifetime
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var task = await response.Content.ReadFromJsonAsync<TaskItemDto>();
+        var task = await response.Content.ReadFromJsonAsync<TaskItemDto>(TestJsonHelper.DefaultOptions);
         Assert.NotNull(task);
         Assert.Equal(_taskId, task.Id);
         Assert.Equal("Original Task Name", task.Name); // Should not change
@@ -184,7 +185,7 @@ public class UpdateTaskEndpointTests : IAsyncLifetime
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var task = await response.Content.ReadFromJsonAsync<TaskItemDto>();
+        var task = await response.Content.ReadFromJsonAsync<TaskItemDto>(TestJsonHelper.DefaultOptions);
         Assert.NotNull(task);
         Assert.Equal(_taskId, task.Id);
         Assert.Null(task.Description);
@@ -203,7 +204,7 @@ public class UpdateTaskEndpointTests : IAsyncLifetime
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var task = await response.Content.ReadFromJsonAsync<TaskItemDto>();
+        var task = await response.Content.ReadFromJsonAsync<TaskItemDto>(TestJsonHelper.DefaultOptions);
         Assert.NotNull(task);
         Assert.Equal(Priority.P1, task.Priority);
     }
@@ -221,7 +222,7 @@ public class UpdateTaskEndpointTests : IAsyncLifetime
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var task = await response.Content.ReadFromJsonAsync<TaskItemDto>();
+        var task = await response.Content.ReadFromJsonAsync<TaskItemDto>(TestJsonHelper.DefaultOptions);
         Assert.NotNull(task);
         Assert.Equal(SystemList.Next, task.SystemList);
     }
@@ -239,7 +240,7 @@ public class UpdateTaskEndpointTests : IAsyncLifetime
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var task = await response.Content.ReadFromJsonAsync<TaskItemDto>();
+        var task = await response.Content.ReadFromJsonAsync<TaskItemDto>(TestJsonHelper.DefaultOptions);
         Assert.NotNull(task);
         Assert.Equal(_projectId, task.ProjectId);
         Assert.Equal("Test Project", task.ProjectName);
@@ -262,7 +263,7 @@ public class UpdateTaskEndpointTests : IAsyncLifetime
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var updatedTask = await response.Content.ReadFromJsonAsync<TaskItemDto>();
+        var updatedTask = await response.Content.ReadFromJsonAsync<TaskItemDto>(TestJsonHelper.DefaultOptions);
         Assert.NotNull(updatedTask);
         Assert.Null(updatedTask.ProjectId);
         Assert.Null(updatedTask.ProjectName);
@@ -282,7 +283,7 @@ public class UpdateTaskEndpointTests : IAsyncLifetime
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var task = await response.Content.ReadFromJsonAsync<TaskItemDto>();
+        var task = await response.Content.ReadFromJsonAsync<TaskItemDto>(TestJsonHelper.DefaultOptions);
         Assert.NotNull(task);
         // Allow 1 second tolerance for timestamp comparison
         Assert.True(Math.Abs((task.DueDate - newDueDate)?.TotalSeconds ?? 999) < 1);
@@ -307,7 +308,7 @@ public class UpdateTaskEndpointTests : IAsyncLifetime
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var task = await response.Content.ReadFromJsonAsync<TaskItemDto>();
+        var task = await response.Content.ReadFromJsonAsync<TaskItemDto>(TestJsonHelper.DefaultOptions);
         Assert.NotNull(task);
         Assert.Equal("Multi-Update Name", task.Name);
         Assert.Equal("Multi-update description", task.Description);
@@ -499,7 +500,7 @@ public class UpdateTaskEndpointTests : IAsyncLifetime
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var task = await response.Content.ReadFromJsonAsync<TaskItemDto>();
+        var task = await response.Content.ReadFromJsonAsync<TaskItemDto>(TestJsonHelper.DefaultOptions);
         Assert.NotNull(task);
         Assert.True(task.UpdatedAt > originalUpdatedAt, "UpdatedAt timestamp should be refreshed on update");
     }

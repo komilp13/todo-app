@@ -1,3 +1,4 @@
+using TodoApp.IntegrationTests.Base;
 using System.Net;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -63,7 +64,7 @@ public class CreateTaskEndpointTests : IAsyncLifetime
         var registerResponse = await _client.PostAsJsonAsync("/api/auth/register", registerRequest);
         Assert.Equal(HttpStatusCode.Created, registerResponse.StatusCode);
 
-        var registerResult = await registerResponse.Content.ReadFromJsonAsync<RegisterResponse>();
+        var registerResult = await registerResponse.Content.ReadFromJsonAsync<RegisterResponse>(TestJsonHelper.DefaultOptions);
         Assert.NotNull(registerResult);
         _authToken = registerResult.Token;
 
@@ -119,7 +120,7 @@ public class CreateTaskEndpointTests : IAsyncLifetime
         // Assert
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
 
-        var result = await response.Content.ReadFromJsonAsync<CreateTaskResponse>();
+        var result = await response.Content.ReadFromJsonAsync<CreateTaskResponse>(TestJsonHelper.DefaultOptions);
         Assert.NotNull(result);
         Assert.Equal("Buy groceries", result.Name);
         Assert.Equal("Milk, eggs, bread", result.Description);
@@ -221,7 +222,7 @@ public class CreateTaskEndpointTests : IAsyncLifetime
 
         // Assert
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
-        var result = await response.Content.ReadFromJsonAsync<CreateTaskResponse>();
+        var result = await response.Content.ReadFromJsonAsync<CreateTaskResponse>(TestJsonHelper.DefaultOptions);
         Assert.NotNull(result);
         Assert.Equal(futureDate, result.DueDate);
     }
@@ -280,7 +281,7 @@ public class CreateTaskEndpointTests : IAsyncLifetime
 
         // Assert
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
-        var result = await response.Content.ReadFromJsonAsync<CreateTaskResponse>();
+        var result = await response.Content.ReadFromJsonAsync<CreateTaskResponse>(TestJsonHelper.DefaultOptions);
         Assert.NotNull(result);
         Assert.Equal(project.Id, result.ProjectId);
     }
@@ -336,7 +337,7 @@ public class CreateTaskEndpointTests : IAsyncLifetime
             var response = await _client.SendAsync(httpRequest);
             Assert.Equal(HttpStatusCode.Created, response.StatusCode);
 
-            var result = await response.Content.ReadFromJsonAsync<CreateTaskResponse>();
+            var result = await response.Content.ReadFromJsonAsync<CreateTaskResponse>(TestJsonHelper.DefaultOptions);
             Assert.NotNull(result);
             Assert.Equal(list, result.SystemList);
 
@@ -366,7 +367,7 @@ public class CreateTaskEndpointTests : IAsyncLifetime
 
         // Act
         var response = await _client.SendAsync(httpRequest);
-        var result = await response.Content.ReadFromJsonAsync<CreateTaskResponse>();
+        var result = await response.Content.ReadFromJsonAsync<CreateTaskResponse>(TestJsonHelper.DefaultOptions);
 
         // Assert - Verify task exists in database
         var taskInDb = await _dbContext.Tasks
@@ -402,7 +403,7 @@ public class CreateTaskEndpointTests : IAsyncLifetime
 
         // Assert
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
-        var result = await response.Content.ReadFromJsonAsync<CreateTaskResponse>();
+        var result = await response.Content.ReadFromJsonAsync<CreateTaskResponse>(TestJsonHelper.DefaultOptions);
         Assert.NotNull(result);
         Assert.Equal(longDescription, result.Description);
     }
@@ -452,7 +453,7 @@ public class CreateTaskEndpointTests : IAsyncLifetime
 
         // Act
         var response = await _client.SendAsync(httpRequest);
-        var result = await response.Content.ReadFromJsonAsync<CreateTaskResponse>();
+        var result = await response.Content.ReadFromJsonAsync<CreateTaskResponse>(TestJsonHelper.DefaultOptions);
 
         // Assert
         Assert.NotNull(response.Headers.Location);

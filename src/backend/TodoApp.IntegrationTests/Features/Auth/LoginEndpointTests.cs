@@ -1,3 +1,4 @@
+using TodoApp.IntegrationTests.Base;
 using System.Net;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -85,7 +86,7 @@ public class LoginEndpointTests : IAsyncLifetime
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var result = await response.Content.ReadFromJsonAsync<LoginResponse>();
+        var result = await response.Content.ReadFromJsonAsync<LoginResponse>(TestJsonHelper.DefaultOptions);
         Assert.NotNull(result);
         Assert.NotEmpty(result.Token);
         Assert.NotNull(result.User);
@@ -156,7 +157,7 @@ public class LoginEndpointTests : IAsyncLifetime
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var result = await response.Content.ReadFromJsonAsync<LoginResponse>();
+        var result = await response.Content.ReadFromJsonAsync<LoginResponse>(TestJsonHelper.DefaultOptions);
         Assert.NotNull(result);
         Assert.NotEmpty(result.Token);
     }
@@ -261,7 +262,7 @@ public class LoginEndpointTests : IAsyncLifetime
 
         // Act - Login
         var loginResponse = await _client.PostAsJsonAsync("/api/auth/login", loginRequest);
-        var loginResult = await loginResponse.Content.ReadFromJsonAsync<LoginResponse>();
+        var loginResult = await loginResponse.Content.ReadFromJsonAsync<LoginResponse>(TestJsonHelper.DefaultOptions);
 
         // Assert - Token is valid JWT format
         Assert.NotNull(loginResult);
@@ -300,8 +301,8 @@ public class LoginEndpointTests : IAsyncLifetime
         Assert.Equal(HttpStatusCode.OK, user1Response.StatusCode);
         Assert.Equal(HttpStatusCode.OK, user2Response.StatusCode);
 
-        var user1Result = await user1Response.Content.ReadFromJsonAsync<LoginResponse>();
-        var user2Result = await user2Response.Content.ReadFromJsonAsync<LoginResponse>();
+        var user1Result = await user1Response.Content.ReadFromJsonAsync<LoginResponse>(TestJsonHelper.DefaultOptions);
+        var user2Result = await user2Response.Content.ReadFromJsonAsync<LoginResponse>(TestJsonHelper.DefaultOptions);
 
         Assert.NotNull(user1Result);
         Assert.NotNull(user2Result);

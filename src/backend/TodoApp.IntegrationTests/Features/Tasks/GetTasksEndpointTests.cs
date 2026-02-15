@@ -1,3 +1,4 @@
+using TodoApp.IntegrationTests.Base;
 using System.Net;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -64,7 +65,7 @@ public class GetTasksEndpointTests : IAsyncLifetime
         };
 
         var registerResponse = await _client.PostAsJsonAsync("/api/auth/register", registerRequest);
-        var registerResult = await registerResponse.Content.ReadFromJsonAsync<RegisterResponse>();
+        var registerResult = await registerResponse.Content.ReadFromJsonAsync<RegisterResponse>(TestJsonHelper.DefaultOptions);
         _authToken = registerResult!.Token;
 
         var user = await _dbContext.Users.FirstAsync(u => u.Email == "taskfilter@example.com");
@@ -149,7 +150,7 @@ public class GetTasksEndpointTests : IAsyncLifetime
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var result = await response.Content.ReadFromJsonAsync<GetTasksResponse>();
+        var result = await response.Content.ReadFromJsonAsync<GetTasksResponse>(TestJsonHelper.DefaultOptions);
         Assert.NotNull(result);
         Assert.Equal(5, result.Tasks.Length); // 5 open tasks
         Assert.Equal(5, result.TotalCount);
@@ -166,7 +167,7 @@ public class GetTasksEndpointTests : IAsyncLifetime
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var result = await response.Content.ReadFromJsonAsync<GetTasksResponse>();
+        var result = await response.Content.ReadFromJsonAsync<GetTasksResponse>(TestJsonHelper.DefaultOptions);
         Assert.NotNull(result);
         Assert.Equal(2, result.Tasks.Length);
         Assert.All(result.Tasks, t => Assert.Equal(SystemList.Inbox, t.SystemList));
@@ -183,7 +184,7 @@ public class GetTasksEndpointTests : IAsyncLifetime
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var result = await response.Content.ReadFromJsonAsync<GetTasksResponse>();
+        var result = await response.Content.ReadFromJsonAsync<GetTasksResponse>(TestJsonHelper.DefaultOptions);
         Assert.NotNull(result);
         Assert.Single(result.Tasks);
         Assert.Equal(_projectId, result.Tasks[0].ProjectId);
@@ -200,7 +201,7 @@ public class GetTasksEndpointTests : IAsyncLifetime
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var result = await response.Content.ReadFromJsonAsync<GetTasksResponse>();
+        var result = await response.Content.ReadFromJsonAsync<GetTasksResponse>(TestJsonHelper.DefaultOptions);
         Assert.NotNull(result);
         Assert.Equal(2, result.Tasks.Length);
         Assert.All(result.Tasks, t => Assert.Contains(t.Labels, l => l.Id == _labelId1));
@@ -217,7 +218,7 @@ public class GetTasksEndpointTests : IAsyncLifetime
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var result = await response.Content.ReadFromJsonAsync<GetTasksResponse>();
+        var result = await response.Content.ReadFromJsonAsync<GetTasksResponse>(TestJsonHelper.DefaultOptions);
         Assert.NotNull(result);
         Assert.Single(result.Tasks);
         Assert.True(result.Tasks[0].IsArchived);
@@ -234,7 +235,7 @@ public class GetTasksEndpointTests : IAsyncLifetime
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var result = await response.Content.ReadFromJsonAsync<GetTasksResponse>();
+        var result = await response.Content.ReadFromJsonAsync<GetTasksResponse>(TestJsonHelper.DefaultOptions);
         Assert.NotNull(result);
         Assert.Equal(6, result.Tasks.Length);
     }
@@ -250,7 +251,7 @@ public class GetTasksEndpointTests : IAsyncLifetime
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var result = await response.Content.ReadFromJsonAsync<GetTasksResponse>();
+        var result = await response.Content.ReadFromJsonAsync<GetTasksResponse>(TestJsonHelper.DefaultOptions);
         Assert.NotNull(result);
         Assert.Single(result.Tasks);
         Assert.True(result.Tasks[0].IsArchived);
@@ -268,7 +269,7 @@ public class GetTasksEndpointTests : IAsyncLifetime
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var result = await response.Content.ReadFromJsonAsync<GetTasksResponse>();
+        var result = await response.Content.ReadFromJsonAsync<GetTasksResponse>(TestJsonHelper.DefaultOptions);
         Assert.NotNull(result);
         Assert.Single(result.Tasks);
         Assert.Equal(SystemList.Next, result.Tasks[0].SystemList);
@@ -286,7 +287,7 @@ public class GetTasksEndpointTests : IAsyncLifetime
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var result = await response.Content.ReadFromJsonAsync<GetTasksResponse>();
+        var result = await response.Content.ReadFromJsonAsync<GetTasksResponse>(TestJsonHelper.DefaultOptions);
         Assert.NotNull(result);
         Assert.Equal("Test Project", result.Tasks[0].ProjectName);
     }
@@ -302,7 +303,7 @@ public class GetTasksEndpointTests : IAsyncLifetime
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var result = await response.Content.ReadFromJsonAsync<GetTasksResponse>();
+        var result = await response.Content.ReadFromJsonAsync<GetTasksResponse>(TestJsonHelper.DefaultOptions);
         Assert.NotNull(result);
         Assert.All(result.Tasks, t => Assert.NotEmpty(t.Labels));
     }
@@ -345,7 +346,7 @@ public class GetTasksEndpointTests : IAsyncLifetime
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var result = await response.Content.ReadFromJsonAsync<GetTasksResponse>();
+        var result = await response.Content.ReadFromJsonAsync<GetTasksResponse>(TestJsonHelper.DefaultOptions);
         Assert.NotNull(result);
         Assert.Empty(result.Tasks);
         Assert.Equal(0, result.TotalCount);
@@ -362,7 +363,7 @@ public class GetTasksEndpointTests : IAsyncLifetime
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var result = await response.Content.ReadFromJsonAsync<GetTasksResponse>();
+        var result = await response.Content.ReadFromJsonAsync<GetTasksResponse>(TestJsonHelper.DefaultOptions);
         Assert.NotNull(result);
 
         // Verify tasks are ordered by SortOrder
@@ -383,7 +384,7 @@ public class GetTasksEndpointTests : IAsyncLifetime
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var result = await response.Content.ReadFromJsonAsync<GetTasksResponse>();
+        var result = await response.Content.ReadFromJsonAsync<GetTasksResponse>(TestJsonHelper.DefaultOptions);
         Assert.NotNull(result);
         Assert.All(result.Tasks, t => Assert.NotNull(t.CompletedAt));
     }
@@ -400,7 +401,7 @@ public class GetTasksEndpointTests : IAsyncLifetime
         };
 
         var otherUserResponse = await _client.PostAsJsonAsync("/api/auth/register", otherUserRequest);
-        var otherUserResult = await otherUserResponse.Content.ReadFromJsonAsync<RegisterResponse>();
+        var otherUserResult = await otherUserResponse.Content.ReadFromJsonAsync<RegisterResponse>(TestJsonHelper.DefaultOptions);
         var otherUserToken = otherUserResult!.Token;
 
         var request = new HttpRequestMessage(HttpMethod.Get, "/api/tasks");
@@ -411,7 +412,7 @@ public class GetTasksEndpointTests : IAsyncLifetime
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var result = await response.Content.ReadFromJsonAsync<GetTasksResponse>();
+        var result = await response.Content.ReadFromJsonAsync<GetTasksResponse>(TestJsonHelper.DefaultOptions);
         Assert.NotNull(result);
         Assert.Empty(result.Tasks); // Other user has no tasks
     }

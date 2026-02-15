@@ -1,3 +1,4 @@
+using TodoApp.IntegrationTests.Base;
 using System.Net;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -70,7 +71,7 @@ public class DeleteTaskEndpointTests : IAsyncLifetime
             var errorContent = await registerResponse.Content.ReadAsStringAsync();
             throw new InvalidOperationException($"Register failed: {registerResponse.StatusCode} - {errorContent}");
         }
-        var registerResult = await registerResponse.Content.ReadFromJsonAsync<RegisterResponse>();
+        var registerResult = await registerResponse.Content.ReadFromJsonAsync<RegisterResponse>(TestJsonHelper.DefaultOptions);
         _authToken = registerResult!.Token;
 
         var user = await _dbContext.Users.FirstAsync(u => u.Email == "deletetask@example.com");
@@ -90,7 +91,7 @@ public class DeleteTaskEndpointTests : IAsyncLifetime
             var errorContent = await registerResponse2.Content.ReadAsStringAsync();
             throw new InvalidOperationException($"Register failed: {registerResponse2.StatusCode} - {errorContent}");
         }
-        var registerResult2 = await registerResponse2.Content.ReadFromJsonAsync<RegisterResponse>();
+        var registerResult2 = await registerResponse2.Content.ReadFromJsonAsync<RegisterResponse>(TestJsonHelper.DefaultOptions);
         _otherUserToken = registerResult2!.Token;
 
         var otherUser = await _dbContext.Users.FirstAsync(u => u.Email == "otheruserfordeletion@example.com");
@@ -303,7 +304,7 @@ public class DeleteTaskEndpointTests : IAsyncLifetime
 
         // Verify task appears in query before deletion
         var response1 = await _client.GetAsync("/api/tasks?systemList=Inbox");
-        var tasks1 = await response1.Content.ReadFromJsonAsync<GetTasksResponse>();
+        var tasks1 = await response1.Content.ReadFromJsonAsync<GetTasksResponse>(TestJsonHelper.DefaultOptions);
         var taskExistsBefore = tasks1?.Tasks.Any(t => t.Id == _taskId) ?? false;
         Assert.True(taskExistsBefore);
 
@@ -312,7 +313,7 @@ public class DeleteTaskEndpointTests : IAsyncLifetime
 
         // Assert - Task no longer appears in query
         var response2 = await _client.GetAsync("/api/tasks?systemList=Inbox");
-        var tasks2 = await response2.Content.ReadFromJsonAsync<GetTasksResponse>();
+        var tasks2 = await response2.Content.ReadFromJsonAsync<GetTasksResponse>(TestJsonHelper.DefaultOptions);
         var taskExistsAfter = tasks2?.Tasks.Any(t => t.Id == _taskId) ?? false;
         Assert.False(taskExistsAfter);
     }

@@ -1,3 +1,4 @@
+using TodoApp.IntegrationTests.Base;
 using System.Net;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -64,14 +65,14 @@ public class CurrentUserEndpointTests : IAsyncLifetime
         };
 
         var registerResponse = await _client.PostAsJsonAsync("/api/auth/register", registerRequest);
-        var registerResult = await registerResponse.Content.ReadFromJsonAsync<RegisterResponse>();
+        var registerResult = await registerResponse.Content.ReadFromJsonAsync<RegisterResponse>(TestJsonHelper.DefaultOptions);
 
         if (registerResult == null || string.IsNullOrEmpty(registerResult.Token))
         {
             // Try logging in if already registered
             var loginRequest = new LoginCommand { Email = email, Password = password };
             var loginResponse = await _client.PostAsJsonAsync("/api/auth/login", loginRequest);
-            var loginResult = await loginResponse.Content.ReadFromJsonAsync<LoginResponse>();
+            var loginResult = await loginResponse.Content.ReadFromJsonAsync<LoginResponse>(TestJsonHelper.DefaultOptions);
             return loginResult?.Token ?? string.Empty;
         }
 
@@ -94,7 +95,7 @@ public class CurrentUserEndpointTests : IAsyncLifetime
         };
 
         var registerResponse = await _client.PostAsJsonAsync("/api/auth/register", registerRequest);
-        var registerResult = await registerResponse.Content.ReadFromJsonAsync<RegisterResponse>();
+        var registerResult = await registerResponse.Content.ReadFromJsonAsync<RegisterResponse>(TestJsonHelper.DefaultOptions);
         var token = registerResult?.Token;
 
         // Act - Call /me endpoint with valid token
@@ -105,7 +106,7 @@ public class CurrentUserEndpointTests : IAsyncLifetime
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var result = await response.Content.ReadFromJsonAsync<CurrentUserResponse>();
+        var result = await response.Content.ReadFromJsonAsync<CurrentUserResponse>(TestJsonHelper.DefaultOptions);
         Assert.NotNull(result);
         Assert.Equal(email, result.Email);
         Assert.Equal(displayName, result.DisplayName);
@@ -162,7 +163,7 @@ public class CurrentUserEndpointTests : IAsyncLifetime
         var request = new HttpRequestMessage(HttpMethod.Get, "/api/auth/me");
         request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
         var response = await _client.SendAsync(request);
-        var userData = await response.Content.ReadFromJsonAsync<CurrentUserResponse>();
+        var userData = await response.Content.ReadFromJsonAsync<CurrentUserResponse>(TestJsonHelper.DefaultOptions);
         var userId = userData?.Id ?? Guid.Empty;
 
         // Manually delete the user from the database
@@ -202,7 +203,7 @@ public class CurrentUserEndpointTests : IAsyncLifetime
             DisplayName = user1DisplayName
         };
         var response1 = await _client.PostAsJsonAsync("/api/auth/register", register1);
-        var result1 = await response1.Content.ReadFromJsonAsync<RegisterResponse>();
+        var result1 = await response1.Content.ReadFromJsonAsync<RegisterResponse>(TestJsonHelper.DefaultOptions);
         var token1 = result1?.Token ?? string.Empty;
 
         var register2 = new RegisterCommand
@@ -212,19 +213,19 @@ public class CurrentUserEndpointTests : IAsyncLifetime
             DisplayName = user2DisplayName
         };
         var response2 = await _client.PostAsJsonAsync("/api/auth/register", register2);
-        var result2 = await response2.Content.ReadFromJsonAsync<RegisterResponse>();
+        var result2 = await response2.Content.ReadFromJsonAsync<RegisterResponse>(TestJsonHelper.DefaultOptions);
         var token2 = result2?.Token ?? string.Empty;
 
         // Act - Get current user for both
         var request1 = new HttpRequestMessage(HttpMethod.Get, "/api/auth/me");
         request1.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token1);
         var getCurrentUser1 = await _client.SendAsync(request1);
-        var currentUser1 = await getCurrentUser1.Content.ReadFromJsonAsync<CurrentUserResponse>();
+        var currentUser1 = await getCurrentUser1.Content.ReadFromJsonAsync<CurrentUserResponse>(TestJsonHelper.DefaultOptions);
 
         var request2 = new HttpRequestMessage(HttpMethod.Get, "/api/auth/me");
         request2.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token2);
         var getCurrentUser2 = await _client.SendAsync(request2);
-        var currentUser2 = await getCurrentUser2.Content.ReadFromJsonAsync<CurrentUserResponse>();
+        var currentUser2 = await getCurrentUser2.Content.ReadFromJsonAsync<CurrentUserResponse>(TestJsonHelper.DefaultOptions);
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, getCurrentUser1.StatusCode);
@@ -260,7 +261,7 @@ public class CurrentUserEndpointTests : IAsyncLifetime
         };
 
         var registerResponse = await _client.PostAsJsonAsync("/api/auth/register", registerRequest);
-        var registerResult = await registerResponse.Content.ReadFromJsonAsync<RegisterResponse>();
+        var registerResult = await registerResponse.Content.ReadFromJsonAsync<RegisterResponse>(TestJsonHelper.DefaultOptions);
         var token = registerResult?.Token ?? string.Empty;
 
         var afterRegister = DateTime.UtcNow;
@@ -269,7 +270,7 @@ public class CurrentUserEndpointTests : IAsyncLifetime
         var request = new HttpRequestMessage(HttpMethod.Get, "/api/auth/me");
         request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
         var response = await _client.SendAsync(request);
-        var currentUser = await response.Content.ReadFromJsonAsync<CurrentUserResponse>();
+        var currentUser = await response.Content.ReadFromJsonAsync<CurrentUserResponse>(TestJsonHelper.DefaultOptions);
 
         // Assert
         Assert.NotNull(currentUser);

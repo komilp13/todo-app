@@ -1,3 +1,4 @@
+using TodoApp.IntegrationTests.Base;
 using System.Net;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -71,7 +72,7 @@ public class GetTaskByIdEndpointTests : IAsyncLifetime
             var errorContent = await registerResponse.Content.ReadAsStringAsync();
             throw new InvalidOperationException($"Register failed: {registerResponse.StatusCode} - {errorContent}");
         }
-        var registerResult = await registerResponse.Content.ReadFromJsonAsync<RegisterResponse>();
+        var registerResult = await registerResponse.Content.ReadFromJsonAsync<RegisterResponse>(TestJsonHelper.DefaultOptions);
         _authToken = registerResult!.Token;
 
         var user = await _dbContext.Users.FirstAsync(u => u.Email == "gettaskbyid@example.com");
@@ -91,7 +92,7 @@ public class GetTaskByIdEndpointTests : IAsyncLifetime
             var errorContent = await registerResponse2.Content.ReadAsStringAsync();
             throw new InvalidOperationException($"Register failed: {registerResponse2.StatusCode} - {errorContent}");
         }
-        var registerResult2 = await registerResponse2.Content.ReadFromJsonAsync<RegisterResponse>();
+        var registerResult2 = await registerResponse2.Content.ReadFromJsonAsync<RegisterResponse>(TestJsonHelper.DefaultOptions);
         _otherUserToken = registerResult2!.Token;
 
         var otherUser = await _dbContext.Users.FirstAsync(u => u.Email == "otheruser@example.com");
@@ -148,7 +149,7 @@ public class GetTaskByIdEndpointTests : IAsyncLifetime
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var task = await response.Content.ReadFromJsonAsync<TaskItemDto>();
+        var task = await response.Content.ReadFromJsonAsync<TaskItemDto>(TestJsonHelper.DefaultOptions);
         Assert.NotNull(task);
         Assert.Equal(_taskId, task.Id);
         Assert.Equal("Test Task", task.Name);
@@ -243,7 +244,7 @@ public class GetTaskByIdEndpointTests : IAsyncLifetime
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var task = await response.Content.ReadFromJsonAsync<TaskItemDto>();
+        var task = await response.Content.ReadFromJsonAsync<TaskItemDto>(TestJsonHelper.DefaultOptions);
         Assert.NotNull(task);
         Assert.Null(task.ProjectId);
         Assert.Null(task.ProjectName);
@@ -273,7 +274,7 @@ public class GetTaskByIdEndpointTests : IAsyncLifetime
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var task = await response.Content.ReadFromJsonAsync<TaskItemDto>();
+        var task = await response.Content.ReadFromJsonAsync<TaskItemDto>(TestJsonHelper.DefaultOptions);
         Assert.NotNull(task);
         Assert.Empty(task.Labels);
     }

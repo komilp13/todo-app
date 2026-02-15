@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using TodoApp.Api.Endpoints;
 using TodoApp.Api.Extensions;
 using TodoApp.Api.Middleware;
@@ -5,6 +6,13 @@ using TodoApp.Infrastructure.Persistence;
 using TodoApp.Infrastructure.Persistence.Seed;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Configure JSON serialization options (for both request and response deserialization/serialization)
+builder.Services.ConfigureHttpJsonOptions(options =>
+{
+    options.SerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+    options.SerializerOptions.Converters.Add(new JsonStringEnumConverter(System.Text.Json.JsonNamingPolicy.CamelCase));
+});
 
 // Add services to the container
 builder.Services

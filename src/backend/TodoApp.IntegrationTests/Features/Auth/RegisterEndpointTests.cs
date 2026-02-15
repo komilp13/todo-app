@@ -1,3 +1,4 @@
+using TodoApp.IntegrationTests.Base;
 using System.Net;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -68,7 +69,7 @@ public class RegisterEndpointTests : IAsyncLifetime
         // Assert
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
 
-        var result = await response.Content.ReadFromJsonAsync<RegisterResponse>();
+        var result = await response.Content.ReadFromJsonAsync<RegisterResponse>(TestJsonHelper.DefaultOptions);
         Assert.NotNull(result);
         Assert.NotEmpty(result.Token);
         Assert.NotNull(result.User);
@@ -267,7 +268,7 @@ public class RegisterEndpointTests : IAsyncLifetime
 
         // Act
         var response = await _client.PostAsJsonAsync("/api/auth/register", request);
-        var result = await response.Content.ReadFromJsonAsync<RegisterResponse>();
+        var result = await response.Content.ReadFromJsonAsync<RegisterResponse>(TestJsonHelper.DefaultOptions);
 
         // Assert
         Assert.NotNull(result);

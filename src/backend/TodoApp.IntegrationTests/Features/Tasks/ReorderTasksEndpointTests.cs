@@ -1,3 +1,4 @@
+using TodoApp.IntegrationTests.Base;
 using System.Net;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -65,7 +66,7 @@ public class ReorderTasksEndpointTests : IAsyncLifetime
         var registerResponse = await _client.PostAsJsonAsync("/api/auth/register", registerRequest);
         Assert.Equal(HttpStatusCode.Created, registerResponse.StatusCode);
 
-        var registerResult = await registerResponse.Content.ReadFromJsonAsync<RegisterResponse>();
+        var registerResult = await registerResponse.Content.ReadFromJsonAsync<RegisterResponse>(TestJsonHelper.DefaultOptions);
         Assert.NotNull(registerResult);
         _authToken = registerResult.Token;
 
@@ -97,7 +98,7 @@ public class ReorderTasksEndpointTests : IAsyncLifetime
             var response = await _client.SendAsync(httpRequest);
             Assert.Equal(HttpStatusCode.Created, response.StatusCode);
 
-            var taskResult = await response.Content.ReadFromJsonAsync<CreateTaskResponse>();
+            var taskResult = await response.Content.ReadFromJsonAsync<CreateTaskResponse>(TestJsonHelper.DefaultOptions);
             Assert.NotNull(taskResult);
             _taskIds.Add(taskResult.Id);
         }
@@ -147,7 +148,7 @@ public class ReorderTasksEndpointTests : IAsyncLifetime
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var result = await response.Content.ReadFromJsonAsync<ReorderTasksResponse>();
+        var result = await response.Content.ReadFromJsonAsync<ReorderTasksResponse>(TestJsonHelper.DefaultOptions);
         Assert.NotNull(result);
         Assert.NotNull(result.ReorderedTasks);
         Assert.Equal(3, result.ReorderedTasks.Length);
@@ -266,7 +267,7 @@ public class ReorderTasksEndpointTests : IAsyncLifetime
             JsonContent.Create(nextTaskRequest));
 
         var createResponse = await _client.SendAsync(httpRequest);
-        var nextTask = await createResponse.Content.ReadFromJsonAsync<CreateTaskResponse>();
+        var nextTask = await createResponse.Content.ReadFromJsonAsync<CreateTaskResponse>(TestJsonHelper.DefaultOptions);
         Assert.NotNull(nextTask);
 
         // Try to reorder with a mix of Inbox and Next tasks
@@ -304,7 +305,7 @@ public class ReorderTasksEndpointTests : IAsyncLifetime
         };
 
         var registerResponse = await _client.PostAsJsonAsync("/api/auth/register", anotherUserRequest);
-        var anotherUserResult = await registerResponse.Content.ReadFromJsonAsync<RegisterResponse>();
+        var anotherUserResult = await registerResponse.Content.ReadFromJsonAsync<RegisterResponse>(TestJsonHelper.DefaultOptions);
         var anotherUserId = (await _dbContext.Users.FirstOrDefaultAsync(u => u.Email == "anotheruser@example.com"))?.Id ?? Guid.Empty;
 
         // Create a task for the other user
@@ -324,7 +325,7 @@ public class ReorderTasksEndpointTests : IAsyncLifetime
         createRequest.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", anotherUserResult?.Token);
 
         var createResponse = await _client.SendAsync(createRequest);
-        var otherUserTask = await createResponse.Content.ReadFromJsonAsync<CreateTaskResponse>();
+        var otherUserTask = await createResponse.Content.ReadFromJsonAsync<CreateTaskResponse>(TestJsonHelper.DefaultOptions);
         Assert.NotNull(otherUserTask);
 
         // Try to reorder current user's tasks with other user's task

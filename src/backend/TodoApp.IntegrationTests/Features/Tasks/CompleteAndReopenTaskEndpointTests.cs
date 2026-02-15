@@ -1,3 +1,4 @@
+using TodoApp.IntegrationTests.Base;
 using System.Net;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -69,7 +70,7 @@ public class CompleteAndReopenTaskEndpointTests : IAsyncLifetime
             var errorContent = await registerResponse.Content.ReadAsStringAsync();
             throw new InvalidOperationException($"Register failed: {registerResponse.StatusCode} - {errorContent}");
         }
-        var registerResult = await registerResponse.Content.ReadFromJsonAsync<RegisterResponse>();
+        var registerResult = await registerResponse.Content.ReadFromJsonAsync<RegisterResponse>(TestJsonHelper.DefaultOptions);
         _authToken = registerResult!.Token;
 
         var user = await _dbContext.Users.FirstAsync(u => u.Email == "completereopentest@example.com");
@@ -89,7 +90,7 @@ public class CompleteAndReopenTaskEndpointTests : IAsyncLifetime
             var errorContent = await registerResponse2.Content.ReadAsStringAsync();
             throw new InvalidOperationException($"Register failed: {registerResponse2.StatusCode} - {errorContent}");
         }
-        var registerResult2 = await registerResponse2.Content.ReadFromJsonAsync<RegisterResponse>();
+        var registerResult2 = await registerResponse2.Content.ReadFromJsonAsync<RegisterResponse>(TestJsonHelper.DefaultOptions);
         _otherUserToken = registerResult2!.Token;
 
         var otherUser = await _dbContext.Users.FirstAsync(u => u.Email == "otheruserforcompletion@example.com");
@@ -129,7 +130,7 @@ public class CompleteAndReopenTaskEndpointTests : IAsyncLifetime
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var task = await response.Content.ReadFromJsonAsync<TaskItemDto>();
+        var task = await response.Content.ReadFromJsonAsync<TaskItemDto>(TestJsonHelper.DefaultOptions);
         Assert.NotNull(task);
         Assert.Equal(_taskId, task.Id);
         Assert.Equal(TaskStatus.Done, task.Status);
@@ -145,10 +146,10 @@ public class CompleteAndReopenTaskEndpointTests : IAsyncLifetime
 
         // Act - Complete task twice
         var response1 = await _client.PatchAsync($"/api/tasks/{_taskId}/complete", null);
-        var task1 = await response1.Content.ReadFromJsonAsync<TaskItemDto>();
+        var task1 = await response1.Content.ReadFromJsonAsync<TaskItemDto>(TestJsonHelper.DefaultOptions);
 
         var response2 = await _client.PatchAsync($"/api/tasks/{_taskId}/complete", null);
-        var task2 = await response2.Content.ReadFromJsonAsync<TaskItemDto>();
+        var task2 = await response2.Content.ReadFromJsonAsync<TaskItemDto>(TestJsonHelper.DefaultOptions);
 
         // Assert - Both should succeed with same status
         Assert.Equal(HttpStatusCode.OK, response1.StatusCode);
@@ -225,7 +226,7 @@ public class CompleteAndReopenTaskEndpointTests : IAsyncLifetime
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var task = await response.Content.ReadFromJsonAsync<TaskItemDto>();
+        var task = await response.Content.ReadFromJsonAsync<TaskItemDto>(TestJsonHelper.DefaultOptions);
         Assert.NotNull(task);
         Assert.Equal(_taskId, task.Id);
         Assert.Equal(TaskStatus.Open, task.Status);
@@ -249,7 +250,7 @@ public class CompleteAndReopenTaskEndpointTests : IAsyncLifetime
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var task = await response.Content.ReadFromJsonAsync<TaskItemDto>();
+        var task = await response.Content.ReadFromJsonAsync<TaskItemDto>(TestJsonHelper.DefaultOptions);
         Assert.NotNull(task);
         Assert.Equal(TaskStatus.Open, task.Status);
         Assert.False(task.IsArchived);
@@ -322,7 +323,7 @@ public class CompleteAndReopenTaskEndpointTests : IAsyncLifetime
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var task = await response.Content.ReadFromJsonAsync<TaskItemDto>();
+        var task = await response.Content.ReadFromJsonAsync<TaskItemDto>(TestJsonHelper.DefaultOptions);
         Assert.NotNull(task);
         Assert.True(task.UpdatedAt > originalUpdatedAt, "UpdatedAt should be refreshed on complete");
     }
@@ -340,7 +341,7 @@ public class CompleteAndReopenTaskEndpointTests : IAsyncLifetime
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var task = await response.Content.ReadFromJsonAsync<TaskItemDto>();
+        var task = await response.Content.ReadFromJsonAsync<TaskItemDto>(TestJsonHelper.DefaultOptions);
         Assert.NotNull(task);
         Assert.NotNull(task.CompletedAt);
         Assert.True(task.CompletedAt >= beforeComplete, "CompletedAt should be set to current time or later");
@@ -366,7 +367,7 @@ public class CompleteAndReopenTaskEndpointTests : IAsyncLifetime
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var task = await response.Content.ReadFromJsonAsync<TaskItemDto>();
+        var task = await response.Content.ReadFromJsonAsync<TaskItemDto>(TestJsonHelper.DefaultOptions);
         Assert.NotNull(task);
         Assert.Equal(originalName, task.Name);
         Assert.Equal(originalDescription, task.Description);
