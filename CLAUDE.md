@@ -156,7 +156,7 @@ dotnet build                      # Build solution
 dotnet test                       # Run all unit + integration tests
 dotnet test --filter "CreateTask" # Run tests for specific feature
 dotnet watch test                 # Auto-rebuild and test on changes
-dotnet run                        # Start API (http://localhost:5000)
+dotnet run                        # Start API on port 5000 (http://localhost:5000)
 
 # Database & Migrations
 # Run from /src/backend directory
@@ -415,7 +415,10 @@ cp .env.example .env
 - `ASPNETCORE_ENVIRONMENT` — Set to `Development`, `Staging`, or `Production`
 
 **Frontend** (`.env.local` / `.env.development.local`):
-- `NEXT_PUBLIC_API_URL` — Backend base URL (e.g., `http://localhost:5000`)
+- `NEXT_PUBLIC_API_URL` — **Backend API URL on port 5000** (e.g., `http://localhost:5000/api`)
+  - **IMPORTANT**: Frontend MUST point to backend on **port 5000**
+  - Local dev: `http://localhost:5000/api`
+  - Docker Compose: `http://api:5000/api` (internal container communication)
 - `NEXT_PUBLIC_APP_NAME` — App name for UI (e.g., "GTD Todo")
 
 **Docker Compose** (`.env` file in repo root):
@@ -433,9 +436,10 @@ cp .env.example .env
 
 # 2a. Option A: Use Docker (recommended)
 docker-compose up
-# Frontend: http://localhost:3000
-# Backend API: http://localhost:5000
-# Swagger: http://localhost:5000/swagger
+# Frontend runs on port 3000:    http://localhost:3000
+# Backend API runs on port 5000: http://localhost:5000
+# Swagger docs (dev only):       http://localhost:5000/swagger
+# NOTE: Frontend must be configured to call backend on port 5000
 
 # 2b. Option B: Manual setup (requires PostgreSQL 15+ locally)
 # Backend

@@ -129,9 +129,9 @@ docker-compose up
 ```
 
 The app will be available at:
-- Frontend: http://localhost:3000
-- Backend API: http://localhost:5000
-- Swagger docs: http://localhost:5000/swagger (development only)
+- **Frontend**: http://localhost:3000 (port 3000)
+- **Backend API**: http://localhost:5000 (port 5000)
+- **Swagger docs**: http://localhost:5000/swagger (port 5000, development only)
 
 ### Manual Setup
 
@@ -157,6 +157,9 @@ cd src/frontend
 
 # Install dependencies
 npm install
+
+# Ensure .env is configured with correct API URL on port 5000:
+# NEXT_PUBLIC_API_URL=http://localhost:5000/api
 
 # Start dev server
 npm run dev
