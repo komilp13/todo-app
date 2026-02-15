@@ -178,5 +178,31 @@ public class TodoTask
         UpdatedAt = DateTime.UtcNow;
     }
 
+    /// <summary>
+    /// Mark task as complete: sets Done status, archives it, and records completion time.
+    /// Idempotent - can be called multiple times safely.
+    /// </summary>
+    public void Complete()
+    {
+        Status = TaskStatus.Done;
+        IsArchived = true;
+        CompletedAt = DateTime.UtcNow;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    /// <summary>
+    /// Reopen a completed task: sets Open status, unarchives it, clears completion time.
+    /// Retains original system list and places task at top (sortOrder = 0).
+    /// Idempotent - can be called multiple times safely.
+    /// </summary>
+    public void Reopen()
+    {
+        Status = TaskStatus.Open;
+        IsArchived = false;
+        CompletedAt = null;
+        SortOrder = 0;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
     private TodoTask() { }
 }

@@ -592,6 +592,7 @@ Build a multi-user, web-based GTD (Getting Things Done) todo application similar
 ---
 
 #### Story 4.1.5: Implement Complete and Reopen Task Endpoints — `5 SP`
+- [~] **IN PROGRESS**
 
 **Description:** `PATCH /api/tasks/{id}/complete` sets Done + archived + completedAt. `PATCH /api/tasks/{id}/reopen` reverses: Open + unarchived + clears completedAt, task goes back to original list at top.
 

@@ -2,8 +2,10 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TodoApp.Api.Handlers;
+using TodoApp.Application.Features.Tasks.CompleteTask;
 using TodoApp.Application.Features.Tasks.CreateTask;
 using TodoApp.Application.Features.Tasks.GetTasks;
+using TodoApp.Application.Features.Tasks.ReopenTask;
 using TodoApp.Application.Features.Tasks.UpdateTask;
 using TodoApp.Domain.Enums;
 using TodoApp.Domain.Interfaces;
@@ -47,6 +49,22 @@ public static class TaskEndpoints
 
         group.MapPut("/{id}", UpdateTask)
             .WithName("UpdateTask")
+            .WithOpenApi()
+            .Produces<TaskItemDto>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces(StatusCodes.Status404NotFound);
+
+        group.MapPatch("/{id}/complete", CompleteTask)
+            .WithName("CompleteTask")
+            .WithOpenApi()
+            .Produces<TaskItemDto>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces(StatusCodes.Status404NotFound);
+
+        group.MapPatch("/{id}/reopen", ReopenTask)
+            .WithName("ReopenTask")
             .WithOpenApi()
             .Produces<TaskItemDto>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status400BadRequest)
@@ -299,6 +317,80 @@ public static class TaskEndpoints
         catch (InvalidOperationException ex) when (ex.Message.Contains("not found"))
         {
             return Results.BadRequest(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Results.BadRequest(new { message = ex.Message });
+        }
+    }
+
+    private static async Task<IResult> CompleteTask(
+        string id,
+        ClaimsPrincipal user,
+        ApplicationDbContext dbContext,
+        CancellationToken cancellationToken)
+    {
+        // Extract user ID from JWT claims
+        var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier);
+        if (userIdClaim == null || !Guid.TryParse(userIdClaim.Value, out var userId))
+        {
+            return Results.Unauthorized();
+        }
+
+        // Validate task ID format
+        if (!Guid.TryParse(id, out var taskId))
+        {
+            return Results.BadRequest(new { errors = new { id = new[] { "Task ID must be a valid GUID." } } });
+        }
+
+        try
+        {
+            var handler = new CompleteTaskHandler(dbContext);
+            var response = await handler.Handle(new CompleteTaskCommand { TaskId = taskId, UserId = userId }, cancellationToken);
+
+            if (response == null)
+            {
+                return Results.NotFound(new { message = "Task not found or does not belong to the authenticated user." });
+            }
+
+            return Results.Ok(response);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Results.BadRequest(new { message = ex.Message });
+        }
+    }
+
+    private static async Task<IResult> ReopenTask(
+        string id,
+        ClaimsPrincipal user,
+        ApplicationDbContext dbContext,
+        CancellationToken cancellationToken)
+    {
+        // Extract user ID from JWT claims
+        var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier);
+        if (userIdClaim == null || !Guid.TryParse(userIdClaim.Value, out var userId))
+        {
+            return Results.Unauthorized();
+        }
+
+        // Validate task ID format
+        if (!Guid.TryParse(id, out var taskId))
+        {
+            return Results.BadRequest(new { errors = new { id = new[] { "Task ID must be a valid GUID." } } });
+        }
+
+        try
+        {
+            var handler = new ReopenTaskHandler(dbContext);
+            var response = await handler.Handle(new ReopenTaskCommand { TaskId = taskId, UserId = userId }, cancellationToken);
+
+            if (response == null)
+            {
+                return Results.NotFound(new { message = "Task not found or does not belong to the authenticated user." });
+            }
+
+            return Results.Ok(response);
         }
         catch (InvalidOperationException ex)
         {
