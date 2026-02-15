@@ -8,10 +8,11 @@
 import { useState, useCallback } from 'react';
 import { TodoTask, SystemList } from '@/types';
 import TaskList from '@/components/Tasks/TaskList';
+import TaskDetailPanel from '@/components/Tasks/TaskDetailPanel';
 import { useTaskRefresh } from '@/hooks/useTaskRefresh';
 
 export default function InboxPage() {
-  const [, setSelectedTask] = useState<TodoTask | null>(null);
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [refreshCounter, setRefreshCounter] = useState(0);
 
   // Register refresh callback for this page
@@ -20,8 +21,11 @@ export default function InboxPage() {
   }, []));
 
   const handleTaskClick = (task: TodoTask) => {
-    setSelectedTask(task);
-    // TODO: Open task detail panel (Story 4.4.1)
+    setSelectedTaskId(task.id);
+  };
+
+  const handleClosePanel = () => {
+    setSelectedTaskId(null);
   };
 
   const handleTaskComplete = (taskId: string) => {
@@ -29,20 +33,29 @@ export default function InboxPage() {
   };
 
   return (
-    <div className="space-y-4">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">Inbox</h1>
-        <p className="mt-1 text-sm text-gray-600">
-          Capture everything, then organize and prioritize
-        </p>
+    <>
+      <div className="space-y-4">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Inbox</h1>
+          <p className="mt-1 text-sm text-gray-600">
+            Capture everything, then organize and prioritize
+          </p>
+        </div>
+
+        <TaskList
+          systemList={SystemList.Inbox}
+          onTaskClick={handleTaskClick}
+          onTaskComplete={handleTaskComplete}
+          refresh={refreshCounter}
+        />
       </div>
 
-      <TaskList
-        systemList={SystemList.Inbox}
-        onTaskClick={handleTaskClick}
-        onTaskComplete={handleTaskComplete}
-        refresh={refreshCounter}
+      {/* Task Detail Panel */}
+      <TaskDetailPanel
+        isOpen={!!selectedTaskId}
+        taskId={selectedTaskId}
+        onClose={handleClosePanel}
       />
-    </div>
+    </>
   );
 }
