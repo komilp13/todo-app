@@ -29,6 +29,8 @@ public class CompleteAndReopenTaskEndpointTests : IAsyncLifetime
 
     public CompleteAndReopenTaskEndpointTests()
     {
+        var uniqueDbName = $"CompleteReopenTaskTests_{Guid.NewGuid()}";
+
         _factory = new WebApplicationFactory<Program>()
             .WithWebHostBuilder(builder =>
             {
@@ -40,7 +42,7 @@ public class CompleteAndReopenTaskEndpointTests : IAsyncLifetime
                         services.Remove(descriptor);
 
                     services.AddDbContext<ApplicationDbContext>(options =>
-                        options.UseInMemoryDatabase("CompleteReopenTaskTests"));
+                        options.UseInMemoryDatabase(uniqueDbName));
                 });
             });
 

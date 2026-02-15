@@ -29,6 +29,8 @@ public class GetTasksEndpointTests : IAsyncLifetime
 
     public GetTasksEndpointTests()
     {
+        var uniqueDbName = $"GetTasksTests_{Guid.NewGuid()}";
+
         _factory = new WebApplicationFactory<Program>()
             .WithWebHostBuilder(builder =>
             {
@@ -40,7 +42,7 @@ public class GetTasksEndpointTests : IAsyncLifetime
                         services.Remove(descriptor);
 
                     services.AddDbContext<ApplicationDbContext>(options =>
-                        options.UseInMemoryDatabase("GetTasksTests"));
+                        options.UseInMemoryDatabase(uniqueDbName));
                 });
             });
 
