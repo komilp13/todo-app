@@ -1,7 +1,7 @@
 /**
  * DraggableTaskRow Component
  * Wraps TaskRow with drag-and-drop functionality using dnd-kit
- * Provides drag handle, visual feedback, and drop indicator
+ * The entire task row is draggable - provides visual feedback and drop indicator
  */
 
 import { useSortable } from '@dnd-kit/sortable';
@@ -63,27 +63,25 @@ export default function DraggableTaskRow({
         <div className="absolute -top-0.5 left-0 right-0 h-0.5 bg-blue-400"></div>
       )}
 
-      <div className="flex gap-2 items-start">
-        {/* Drag Handle */}
-        {!isDragDisabled && (
+      {/* Task Content - Make entire row draggable */}
+      <div className="flex-1">
+        {!isDragDisabled ? (
           <div
             {...attributes}
             {...listeners}
-            className="flex items-center justify-center w-5 h-full cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity"
-            title="Drag to reorder"
+            className="cursor-grab active:cursor-grabbing"
           >
-            <svg
-              className="w-4 h-4 text-gray-400"
-              fill="currentColor"
-              viewBox="0 0 20 20"
-            >
-              <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
-            </svg>
+            <TaskRow
+              task={task}
+              projectName={projectName}
+              labelNames={labelNames}
+              labelColors={labelColors}
+              onComplete={onComplete}
+              onClick={onClick}
+              isAnimatingOut={isAnimatingOut}
+            />
           </div>
-        )}
-
-        {/* Task Content */}
-        <div className="flex-1">
+        ) : (
           <TaskRow
             task={task}
             projectName={projectName}
@@ -93,7 +91,7 @@ export default function DraggableTaskRow({
             onClick={onClick}
             isAnimatingOut={isAnimatingOut}
           />
-        </div>
+        )}
       </div>
     </div>
   );
