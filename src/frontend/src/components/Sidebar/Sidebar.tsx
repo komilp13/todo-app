@@ -30,7 +30,7 @@ export default function Sidebar() {
         {/* Mobile Backdrop */}
         {isMobileOpen && (
           <div
-            className="fixed inset-0 z-30 bg-black/50 transition-opacity duration-200 lg:hidden"
+            className="fixed inset-0 z-30 bg-black/15 transition-opacity duration-200 lg:hidden"
             onClick={closeMobileSidebar}
             role="presentation"
           />

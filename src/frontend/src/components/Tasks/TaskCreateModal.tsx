@@ -246,7 +246,7 @@ export default function TaskCreateModal({
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 z-40 bg-black bg-opacity-50 transition-opacity"
+        className="fixed inset-0 z-40 bg-black/15 transition-opacity"
         onClick={handleBackdropClick}
       />
 
