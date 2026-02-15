@@ -79,4 +79,51 @@ public class TaskRepository : ITaskRepository
 
         return maxSortOrder.HasValue ? maxSortOrder.Value + 1 : 0;
     }
+
+    /// <inheritdoc />
+    public async Task<Dictionary<Guid, int>> ReorderTasksAsync(Guid userId, Guid[] taskIds, string systemList, CancellationToken cancellationToken = default)
+    {
+        if (!Enum.TryParse<Domain.Enums.SystemList>(systemList, out var parsedList))
+        {
+            throw new InvalidOperationException($"Invalid system list: {systemList}");
+        }
+
+        // Fetch all tasks by IDs
+        var tasks = await _dbContext.Tasks
+            .Where(t => taskIds.Contains(t.Id))
+            .ToListAsync(cancellationToken);
+
+        // Validate: all task IDs were found
+        if (tasks.Count != taskIds.Length)
+        {
+            var foundIds = tasks.Select(t => t.Id).ToHashSet();
+            var missingIds = taskIds.Where(id => !foundIds.Contains(id)).ToList();
+            throw new InvalidOperationException($"Tasks not found: {string.Join(", ", missingIds)}");
+        }
+
+        // Validate: all tasks belong to the user
+        if (tasks.Any(t => t.UserId != userId))
+        {
+            throw new InvalidOperationException("One or more tasks do not belong to the authenticated user.");
+        }
+
+        // Validate: all tasks belong to the specified system list
+        if (tasks.Any(t => t.SystemList != parsedList))
+        {
+            throw new InvalidOperationException($"One or more tasks do not belong to the {systemList} system list.");
+        }
+
+        // Update sort orders atomically
+        var result = new Dictionary<Guid, int>();
+        for (int i = 0; i < taskIds.Length; i++)
+        {
+            var task = tasks.First(t => t.Id == taskIds[i]);
+            task.UpdateSortOrder(i);
+            result[task.Id] = task.SortOrder;
+        }
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        return result;
+    }
 }

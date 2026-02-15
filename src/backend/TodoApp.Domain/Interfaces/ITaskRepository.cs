@@ -36,4 +36,15 @@ public interface ITaskRepository
     /// Gets the maximum sort order for tasks in a system list.
     /// </summary>
     Task<int> GetMaxSortOrderAsync(Guid userId, string systemList, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Reorders tasks atomically by updating their sort order values.
+    /// All tasks must belong to the authenticated user and the specified system list.
+    /// </summary>
+    /// <param name="userId">Authenticated user ID for authorization.</param>
+    /// <param name="taskIds">Ordered array of task IDs. Array index becomes the sort order.</param>
+    /// <param name="systemList">System list name. All tasks must belong to this list.</param>
+    /// <returns>Dictionary mapping task ID to new sort order.</returns>
+    /// <exception cref="InvalidOperationException">If any task is not found, doesn't belong to user, or doesn't belong to the specified system list.</exception>
+    Task<Dictionary<Guid, int>> ReorderTasksAsync(Guid userId, Guid[] taskIds, string systemList, CancellationToken cancellationToken = default);
 }

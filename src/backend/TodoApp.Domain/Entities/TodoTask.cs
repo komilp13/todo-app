@@ -179,6 +179,15 @@ public class TodoTask
     }
 
     /// <summary>
+    /// Update task sort order within its system list.
+    /// </summary>
+    public void UpdateSortOrder(int sortOrder)
+    {
+        SortOrder = sortOrder;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    /// <summary>
     /// Mark task as complete: sets Done status, archives it, and records completion time.
     /// Idempotent - can be called multiple times safely.
     /// </summary>

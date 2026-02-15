@@ -8,6 +8,7 @@ using TodoApp.Application.Features.Tasks.CreateTask;
 using TodoApp.Application.Features.Tasks.DeleteTask;
 using TodoApp.Application.Features.Tasks.GetTasks;
 using TodoApp.Application.Features.Tasks.ReopenTask;
+using TodoApp.Application.Features.Tasks.ReorderTasks;
 using TodoApp.Application.Features.Tasks.UpdateTask;
 using TodoApp.Domain.Enums;
 using TodoApp.Domain.Interfaces;
@@ -72,6 +73,13 @@ public static class TaskEndpoints
             .Produces(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status401Unauthorized)
             .Produces(StatusCodes.Status404NotFound);
+
+        group.MapPatch("/reorder", (HttpContext context, ReorderTasksCommand command, ClaimsPrincipal user, ITaskRepository taskRepository, CancellationToken cancellationToken) => ReorderTasks(context, command, user, taskRepository, cancellationToken))
+            .WithName("ReorderTasks")
+            .WithOpenApi()
+            .Produces<ReorderTasksResponse>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status401Unauthorized);
 
         group.MapDelete("/{id}", (HttpContext context, string id, ClaimsPrincipal user, ApplicationDbContext dbContext, CancellationToken cancellationToken) => DeleteTask(context, id, user, dbContext, cancellationToken))
             .WithName("DeleteTask")
@@ -540,6 +548,57 @@ public static class TaskEndpoints
             }
 
             context.Response.StatusCode = StatusCodes.Status204NoContent;
+        }
+        catch (InvalidOperationException ex)
+        {
+            context.Response.StatusCode = StatusCodes.Status400BadRequest;
+            var json = JsonSerializer.Serialize(new { message = ex.Message });
+            context.Response.ContentType = "application/json";
+            await context.Response.WriteAsync(json);
+        }
+    }
+
+    private static async Task ReorderTasks(
+        HttpContext context,
+        ReorderTasksCommand command,
+        ClaimsPrincipal user,
+        ITaskRepository taskRepository,
+        CancellationToken cancellationToken)
+    {
+        // Extract user ID from JWT claims
+        var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier);
+        if (userIdClaim == null || !Guid.TryParse(userIdClaim.Value, out var userId))
+        {
+            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+            return;
+        }
+
+        // Validate request
+        var validator = new ReorderTasksCommandValidator();
+        command.UserId = userId;
+
+        var validationResult = await validator.ValidateAsync(command, cancellationToken);
+        if (!validationResult.IsValid)
+        {
+            context.Response.StatusCode = StatusCodes.Status400BadRequest;
+            var errors = validationResult.Errors
+                .GroupBy(e => e.PropertyName)
+                .ToDictionary(g => g.Key, g => g.Select(e => e.ErrorMessage).ToArray());
+            var json = JsonSerializer.Serialize(new { errors });
+            context.Response.ContentType = "application/json";
+            await context.Response.WriteAsync(json);
+            return;
+        }
+
+        try
+        {
+            var handler = new ReorderTasksHandler(taskRepository);
+            var response = await handler.Handle(command, cancellationToken);
+
+            context.Response.StatusCode = StatusCodes.Status200OK;
+            var json = JsonSerializer.Serialize(response);
+            context.Response.ContentType = "application/json";
+            await context.Response.WriteAsync(json);
         }
         catch (InvalidOperationException ex)
         {
