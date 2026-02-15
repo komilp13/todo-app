@@ -960,6 +960,7 @@ Build a multi-user, web-based GTD (Getting Things Done) todo application similar
 ---
 
 #### Story 5.4.1: Build Someday List View Page — `2 SP`
+- [x] **COMPLETED**
 
 **Description:** Someday page at `/someday`. Same structure as Inbox/Next with deferred-item messaging.
 
