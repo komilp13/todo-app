@@ -605,7 +605,7 @@ Build a multi-user, web-based GTD (Getting Things Done) todo application similar
 ---
 
 #### Story 4.1.6: Implement Delete Task Endpoint — `3 SP`
-- [~] **IN PROGRESS**
+- [x] **COMPLETED**
 
 **Description:** `DELETE /api/tasks/{id}` permanently hard-deletes task and its label associations.
 
