@@ -98,4 +98,12 @@ describe('TaskRow', () => {
     render(<TaskRow task={taskNoDueDate} />);
     expect(screen.queryByText('Today')).not.toBeInTheDocument();
   });
+
+  it('applies fade-slide-out animation when isAnimatingOut is true', () => {
+    const { container } = render(
+      <TaskRow task={mockTask} isAnimatingOut={true} />
+    );
+    const taskRow = container.querySelector('.animate-fade-slide-out');
+    expect(taskRow).toBeInTheDocument();
+  });
 });

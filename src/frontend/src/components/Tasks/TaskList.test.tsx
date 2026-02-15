@@ -2,7 +2,7 @@
  * Tests for TaskList component
  */
 
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import TaskList from './TaskList';
 import { TodoTask, Priority, TaskStatus, SystemList } from '@/types';
 import { apiClient } from '@/services/apiClient';
@@ -45,7 +45,10 @@ describe('TaskList', () => {
     (apiClient.get as jest.Mock).mockImplementation(
       () =>
         new Promise((resolve) => {
-          setTimeout(() => resolve({ data: mockTasks }), 100);
+          setTimeout(
+            () => resolve({ data: { tasks: mockTasks, totalCount: 2 } }),
+            100
+          );
         })
     );
 
@@ -55,7 +58,9 @@ describe('TaskList', () => {
   });
 
   it('fetches and displays tasks', async () => {
-    (apiClient.get as jest.Mock).mockResolvedValue({ data: mockTasks });
+    (apiClient.get as jest.Mock).mockResolvedValue({
+      data: { tasks: mockTasks, totalCount: 2 },
+    });
 
     render(<TaskList systemList={SystemList.Inbox} />);
 
@@ -66,7 +71,9 @@ describe('TaskList', () => {
   });
 
   it('displays empty state when no tasks', async () => {
-    (apiClient.get as jest.Mock).mockResolvedValue({ data: [] });
+    (apiClient.get as jest.Mock).mockResolvedValue({
+      data: { tasks: [], totalCount: 0 },
+    });
 
     render(<TaskList systemList={SystemList.Inbox} />);
 
@@ -90,7 +97,9 @@ describe('TaskList', () => {
   });
 
   it('calls apiClient.get with correct systemList parameter', async () => {
-    (apiClient.get as jest.Mock).mockResolvedValue({ data: mockTasks });
+    (apiClient.get as jest.Mock).mockResolvedValue({
+      data: { tasks: mockTasks, totalCount: 2 },
+    });
 
     render(<TaskList systemList={SystemList.Next} />);
 
@@ -102,7 +111,9 @@ describe('TaskList', () => {
   });
 
   it('refetches tasks when refresh prop changes', async () => {
-    (apiClient.get as jest.Mock).mockResolvedValue({ data: mockTasks });
+    (apiClient.get as jest.Mock).mockResolvedValue({
+      data: { tasks: mockTasks, totalCount: 2 },
+    });
 
     const { rerender } = render(
       <TaskList systemList={SystemList.Inbox} refresh={0} />
@@ -119,32 +130,4 @@ describe('TaskList', () => {
     });
   });
 
-  it('calls onTaskComplete when task is completed', async () => {
-    const onTaskComplete = jest.fn();
-    (apiClient.get as jest.Mock).mockResolvedValue({ data: mockTasks });
-
-    render(
-      <TaskList
-        systemList={SystemList.Inbox}
-        onTaskComplete={onTaskComplete}
-      />
-    );
-
-    await waitFor(() => {
-      expect(screen.getByText('Buy groceries')).toBeInTheDocument();
-    });
-  });
-
-  it('calls onTaskClick when task is clicked', async () => {
-    const onTaskClick = jest.fn();
-    (apiClient.get as jest.Mock).mockResolvedValue({ data: mockTasks });
-
-    render(
-      <TaskList systemList={SystemList.Inbox} onTaskClick={onTaskClick} />
-    );
-
-    await waitFor(() => {
-      expect(screen.getByText('Buy groceries')).toBeInTheDocument();
-    });
-  });
 });

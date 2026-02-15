@@ -17,6 +17,7 @@ interface TaskRowProps {
   labelColors?: Record<string, string>;
   onComplete?: (taskId: string) => void;
   onClick?: (task: TodoTask) => void;
+  isAnimatingOut?: boolean;
 }
 
 export default function TaskRow({
@@ -26,6 +27,7 @@ export default function TaskRow({
   labelColors = {},
   onComplete,
   onClick,
+  isAnimatingOut = false,
 }: TaskRowProps) {
   const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     e.stopPropagation();
@@ -41,7 +43,11 @@ export default function TaskRow({
   return (
     <div
       onClick={() => onClick?.(task)}
-      className="group flex items-start gap-3 rounded-lg border border-transparent px-3 py-2.5 hover:border-gray-200 hover:bg-gray-50 cursor-pointer transition-colors"
+      className={`group flex items-start gap-3 rounded-lg border border-transparent px-3 py-2.5 hover:border-gray-200 hover:bg-gray-50 cursor-pointer transition-all ${
+        isAnimatingOut
+          ? 'animate-fade-slide-out opacity-0'
+          : 'opacity-100'
+      }`}
     >
       {/* Checkbox */}
       <input
