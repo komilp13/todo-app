@@ -39,6 +39,11 @@ export default function UpcomingPage() {
     setRefreshCounter(prev => prev + 1);
   };
 
+  const handleTaskMoved = () => {
+    setSelectedTaskId(null);
+    setRefreshCounter(prev => prev + 1);
+  };
+
   const handleQuickAddTask = async (taskName: string) => {
     try {
       // Get today's date at midnight (local time)
@@ -93,6 +98,7 @@ export default function UpcomingPage() {
         taskId={selectedTaskId}
         onClose={handleClosePanel}
         onTaskDeleted={handleTaskDeleted}
+        onTaskMoved={handleTaskMoved}
       />
     </>
   );

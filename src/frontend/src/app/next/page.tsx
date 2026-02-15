@@ -35,6 +35,11 @@ export default function NextPage() {
     setRefreshCounter(prev => prev + 1);
   };
 
+  const handleTaskMoved = () => {
+    setSelectedTaskId(null);
+    setRefreshCounter(prev => prev + 1);
+  };
+
   const handleTaskComplete = (taskId: string) => {
     // TODO: Call complete endpoint (Story 4.2.2)
   };
@@ -60,6 +65,8 @@ export default function NextPage() {
           systemList={SystemList.Next}
           onTaskClick={handleTaskClick}
           onTaskComplete={handleTaskComplete}
+          onTaskMoved={handleTaskMoved}
+          onTaskDeleted={handleTaskDeleted}
           refresh={refreshCounter}
           emptyMessage="What will you work on next? Move tasks here from Inbox."
         />
@@ -71,6 +78,7 @@ export default function NextPage() {
         taskId={selectedTaskId}
         onClose={handleClosePanel}
         onTaskDeleted={handleTaskDeleted}
+        onTaskMoved={handleTaskMoved}
       />
     </>
   );

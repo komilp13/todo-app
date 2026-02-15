@@ -21,6 +21,7 @@ interface TaskDetailPanelProps {
   isArchiveView?: boolean;
   onTaskReopened?: () => void;
   onTaskDeleted?: () => void;
+  onTaskMoved?: (oldList: SystemList, newList: SystemList) => void;
 }
 
 export default function TaskDetailPanel({
@@ -30,6 +31,7 @@ export default function TaskDetailPanel({
   isArchiveView = false,
   onTaskReopened,
   onTaskDeleted,
+  onTaskMoved,
 }: TaskDetailPanelProps) {
   const [task, setTask] = useState<TodoTask | null>(null);
   const [loading, setLoading] = useState(false);
@@ -195,6 +197,7 @@ export default function TaskDetailPanel({
 
     // Save original state for rollback
     const originalTask = { ...task };
+    const oldSystemList = task.systemList;
 
     // Optimistic update
     const updatedTask = { ...task, [field]: value };
@@ -212,8 +215,17 @@ export default function TaskDetailPanel({
       setEditingField(null);
       setEditValue(null);
 
-      // Show success toast with brief duration
-      show('Saved', { type: 'success', duration: 2000 });
+      // Show success toast - special message for system list changes
+      if (field === 'systemList') {
+        show(`Task moved to ${value}`, { type: 'success', duration: 3000 });
+
+        // Notify parent to refresh the list view
+        if (onTaskMoved && oldSystemList !== value) {
+          onTaskMoved(oldSystemList, value as SystemList);
+        }
+      } else {
+        show('Saved', { type: 'success', duration: 2000 });
+      }
     } catch (err) {
       // Rollback on error
       setTask(originalTask);

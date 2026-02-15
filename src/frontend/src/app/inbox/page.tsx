@@ -35,6 +35,11 @@ export default function InboxPage() {
     setRefreshCounter(prev => prev + 1);
   };
 
+  const handleTaskMoved = () => {
+    setSelectedTaskId(null);
+    setRefreshCounter(prev => prev + 1);
+  };
+
   const handleTaskComplete = (taskId: string) => {
     // TODO: Call complete endpoint (Story 4.2.2)
   };
@@ -60,6 +65,8 @@ export default function InboxPage() {
           systemList={SystemList.Inbox}
           onTaskClick={handleTaskClick}
           onTaskComplete={handleTaskComplete}
+          onTaskMoved={handleTaskMoved}
+          onTaskDeleted={handleTaskDeleted}
           refresh={refreshCounter}
           emptyMessage="Your Inbox is clear! Nice work."
         />
@@ -71,6 +78,7 @@ export default function InboxPage() {
         taskId={selectedTaskId}
         onClose={handleClosePanel}
         onTaskDeleted={handleTaskDeleted}
+        onTaskMoved={handleTaskMoved}
       />
     </>
   );

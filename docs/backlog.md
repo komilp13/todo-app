@@ -988,6 +988,7 @@ Build a multi-user, web-based GTD (Getting Things Done) todo application similar
 ---
 
 #### Story 5.5.1: Implement Task Move via Detail Panel and Context Menu — `8 SP`
+- [x] **COMPLETED**
 
 **Description:** System list selector in detail panel (saves via PUT). Right-click context menu: "Move to" > lists (excluding current), "Complete", "Delete", "Edit". Smooth animations, sidebar count updates, success toast.
 

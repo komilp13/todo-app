@@ -37,6 +37,8 @@ interface TaskListProps {
   projectId?: string;
   onTaskClick?: (task: TodoTask) => void;
   onTaskComplete?: (taskId: string) => void;
+  onTaskMoved?: () => void;
+  onTaskDeleted?: () => void;
   refresh?: number; // Increment to trigger refetch
   emptyMessage?: string; // Custom empty state message
 }
@@ -53,6 +55,8 @@ export default function TaskList({
   projectId,
   onTaskClick,
   onTaskComplete,
+  onTaskMoved,
+  onTaskDeleted,
   refresh = 0,
   emptyMessage = 'No tasks here. Enjoy your free time! 🎉',
 }: TaskListProps) {
@@ -248,6 +252,16 @@ export default function TaskList({
     }
   };
 
+  const handleTaskMoved = () => {
+    // Notify parent component to refresh
+    onTaskMoved?.();
+  };
+
+  const handleTaskDeleted = () => {
+    // Notify parent component to refresh
+    onTaskDeleted?.();
+  };
+
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
 
@@ -402,6 +416,8 @@ export default function TaskList({
                 task={task}
                 onComplete={handleTaskComplete}
                 onClick={onTaskClick}
+                onTaskMoved={handleTaskMoved}
+                onTaskDeleted={handleTaskDeleted}
                 isAnimatingOut={animatingOutTaskIds.has(task.id)}
                 isDragDisabled={isMobile}
               />

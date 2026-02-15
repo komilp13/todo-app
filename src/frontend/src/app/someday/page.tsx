@@ -35,6 +35,11 @@ export default function SomedayPage() {
     setRefreshCounter(prev => prev + 1);
   };
 
+  const handleTaskMoved = () => {
+    setSelectedTaskId(null);
+    setRefreshCounter(prev => prev + 1);
+  };
+
   const handleTaskComplete = (taskId: string) => {
     // TODO: Call complete endpoint (Story 4.2.2)
   };
@@ -60,6 +65,8 @@ export default function SomedayPage() {
           systemList={SystemList.Someday}
           onTaskClick={handleTaskClick}
           onTaskComplete={handleTaskComplete}
+          onTaskMoved={handleTaskMoved}
+          onTaskDeleted={handleTaskDeleted}
           refresh={refreshCounter}
           emptyMessage="Nothing on the back burner. Add tasks you might want to do someday."
         />
@@ -71,6 +78,7 @@ export default function SomedayPage() {
         taskId={selectedTaskId}
         onClose={handleClosePanel}
         onTaskDeleted={handleTaskDeleted}
+        onTaskMoved={handleTaskMoved}
       />
     </>
   );

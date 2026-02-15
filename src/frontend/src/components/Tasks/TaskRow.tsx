@@ -1,14 +1,19 @@
 /**
  * TaskRow Component
  * Displays a single task in a list with all relevant information
+ * Supports right-click context menu for quick actions (Story 5.5.1)
  */
 
+'use client';
+
+import { useState } from 'react';
 import { TodoTask } from '@/types';
 import {
   formatRelativeDate,
   getPriorityColor,
   isOverdue,
 } from '@/utils/dateFormatter';
+import TaskContextMenu from '@/components/shared/TaskContextMenu';
 
 interface TaskRowProps {
   task: TodoTask;
@@ -17,6 +22,8 @@ interface TaskRowProps {
   labelColors?: Record<string, string>;
   onComplete?: (taskId: string) => void;
   onClick?: (task: TodoTask) => void;
+  onTaskMoved?: () => void;
+  onTaskDeleted?: () => void;
   isAnimatingOut?: boolean;
   showSystemList?: boolean;
 }
@@ -28,9 +35,14 @@ export default function TaskRow({
   labelColors = {},
   onComplete,
   onClick,
+  onTaskMoved,
+  onTaskDeleted,
   isAnimatingOut = false,
   showSystemList = false,
 }: TaskRowProps) {
+  const [showContextMenu, setShowContextMenu] = useState(false);
+  const [contextMenuPosition, setContextMenuPosition] = useState({ x: 0, y: 0 });
+
   const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     e.stopPropagation();
     if (onComplete) {
@@ -38,19 +50,36 @@ export default function TaskRow({
     }
   };
 
+  const handleContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setContextMenuPosition({ x: e.clientX, y: e.clientY });
+    setShowContextMenu(true);
+  };
+
+  const handleCloseContextMenu = () => {
+    setShowContextMenu(false);
+  };
+
+  const handleEdit = () => {
+    onClick?.(task);
+  };
+
   const priorityColor = getPriorityColor(task.priority);
   const relativeDueDate = formatRelativeDate(task.dueDate);
   const isDueOverdue = isOverdue(task.dueDate);
 
   return (
-    <div
-      onClick={() => onClick?.(task)}
-      className={`group flex items-start gap-3 rounded-lg border border-transparent px-3 py-2.5 hover:border-gray-200 hover:bg-gray-50 cursor-pointer transition-all ${
-        isAnimatingOut
-          ? 'animate-fade-slide-out opacity-0'
-          : 'opacity-100'
-      }`}
-    >
+    <>
+      <div
+        onClick={() => onClick?.(task)}
+        onContextMenu={handleContextMenu}
+        className={`group flex items-start gap-3 rounded-lg border border-transparent px-3 py-2.5 hover:border-gray-200 hover:bg-gray-50 cursor-pointer transition-all ${
+          isAnimatingOut
+            ? 'animate-fade-slide-out opacity-0'
+            : 'opacity-100'
+        }`}
+      >
       {/* Checkbox */}
       <input
         type="checkbox"
@@ -131,5 +160,18 @@ export default function TaskRow({
         </div>
       </div>
     </div>
+
+    {/* Context Menu */}
+    {showContextMenu && (
+      <TaskContextMenu
+        task={task}
+        position={contextMenuPosition}
+        onClose={handleCloseContextMenu}
+        onTaskMoved={onTaskMoved}
+        onTaskDeleted={onTaskDeleted}
+        onEdit={handleEdit}
+      />
+    )}
+  </>
   );
 }

@@ -16,6 +16,8 @@ interface DraggableTaskRowProps {
   labelColors?: Record<string, string>;
   onComplete?: (taskId: string) => void;
   onClick?: (task: TodoTask) => void;
+  onTaskMoved?: () => void;
+  onTaskDeleted?: () => void;
   isAnimatingOut?: boolean;
   isDragDisabled?: boolean;
 }
@@ -27,6 +29,8 @@ export default function DraggableTaskRow({
   labelColors,
   onComplete,
   onClick,
+  onTaskMoved,
+  onTaskDeleted,
   isAnimatingOut = false,
   isDragDisabled = false,
 }: DraggableTaskRowProps) {
@@ -78,6 +82,8 @@ export default function DraggableTaskRow({
               labelColors={labelColors}
               onComplete={onComplete}
               onClick={onClick}
+              onTaskMoved={onTaskMoved}
+              onTaskDeleted={onTaskDeleted}
               isAnimatingOut={isAnimatingOut}
             />
           </div>
@@ -89,6 +95,8 @@ export default function DraggableTaskRow({
             labelColors={labelColors}
             onComplete={onComplete}
             onClick={onClick}
+            onTaskMoved={onTaskMoved}
+            onTaskDeleted={onTaskDeleted}
             isAnimatingOut={isAnimatingOut}
           />
         )}
