@@ -649,6 +649,7 @@ Build a multi-user, web-based GTD (Getting Things Done) todo application similar
 ---
 
 #### Story 4.2.1: Build Task List Component — `8 SP`
+- [~] **IN PROGRESS**
 
 **Description:** `TaskList` component rendering ordered task rows. Each row: completion checkbox, name, priority color (P1=red, P2=orange, P3=blue, P4=gray), due date (relative: Today/Tomorrow/etc.), project chip, label chips. Empty state. Click opens detail view. Loading skeleton.
 

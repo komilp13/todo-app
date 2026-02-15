@@ -3,11 +3,24 @@
 /**
  * Someday Page
  * Deferred tasks using GTD's Someday/Maybe list concept.
- *
- * This is a placeholder page structure that will be enhanced with
- * the TaskList component in future stories.
  */
+
+import { useState } from 'react';
+import { TodoTask, SystemList } from '@/types';
+import TaskList from '@/components/Tasks/TaskList';
+
 export default function SomedayPage() {
+  const [, setSelectedTask] = useState<TodoTask | null>(null);
+
+  const handleTaskClick = (task: TodoTask) => {
+    setSelectedTask(task);
+    // TODO: Open task detail panel (Story 4.4.1)
+  };
+
+  const handleTaskComplete = (taskId: string) => {
+    // TODO: Call complete endpoint (Story 4.2.2)
+  };
+
   return (
     <div className="space-y-4">
       <div>
@@ -17,12 +30,11 @@ export default function SomedayPage() {
         </p>
       </div>
 
-      {/* Placeholder for TaskList component (Story 4.2.1) */}
-      <div className="rounded-lg border border-gray-200 bg-white p-8 text-center">
-        <p className="text-gray-500">
-          Task list will be available soon. Move tasks here to clear your mind.
-        </p>
-      </div>
+      <TaskList
+        systemList={SystemList.Someday}
+        onTaskClick={handleTaskClick}
+        onTaskComplete={handleTaskComplete}
+      />
     </div>
   );
 }
