@@ -161,7 +161,7 @@ export default function TaskDetailPanel({
     <>
       {/* Backdrop - only covers left side (list area) */}
       <div
-        className="fixed left-0 top-0 bottom-0 z-30 bg-black bg-opacity-5 transition-opacity"
+        className="fixed left-0 top-0 bottom-0 z-30 bg-black/5 transition-opacity"
         style={{ width: 'calc(100% - 24rem)' }}
         onClick={handleBackdropClick}
       />
