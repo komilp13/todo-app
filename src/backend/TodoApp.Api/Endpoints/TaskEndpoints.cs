@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using TodoApp.Api.Handlers;
 using TodoApp.Application.Features.Tasks.CompleteTask;
 using TodoApp.Application.Features.Tasks.CreateTask;
+using TodoApp.Application.Features.Tasks.DeleteTask;
 using TodoApp.Application.Features.Tasks.GetTasks;
 using TodoApp.Application.Features.Tasks.ReopenTask;
 using TodoApp.Application.Features.Tasks.UpdateTask;
@@ -67,6 +68,14 @@ public static class TaskEndpoints
             .WithName("ReopenTask")
             .WithOpenApi()
             .Produces<TaskItemDto>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces(StatusCodes.Status404NotFound);
+
+        group.MapDelete("/{id}", DeleteTask)
+            .WithName("DeleteTask")
+            .WithOpenApi()
+            .Produces(StatusCodes.Status204NoContent)
             .Produces(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status401Unauthorized)
             .Produces(StatusCodes.Status404NotFound);
@@ -391,6 +400,43 @@ public static class TaskEndpoints
             }
 
             return Results.Ok(response);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Results.BadRequest(new { message = ex.Message });
+        }
+    }
+
+    private static async Task<IResult> DeleteTask(
+        string id,
+        ClaimsPrincipal user,
+        ApplicationDbContext dbContext,
+        CancellationToken cancellationToken)
+    {
+        // Extract user ID from JWT claims
+        var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier);
+        if (userIdClaim == null || !Guid.TryParse(userIdClaim.Value, out var userId))
+        {
+            return Results.Unauthorized();
+        }
+
+        // Validate task ID format
+        if (!Guid.TryParse(id, out var taskId))
+        {
+            return Results.BadRequest(new { errors = new { id = new[] { "Task ID must be a valid GUID." } } });
+        }
+
+        try
+        {
+            var handler = new DeleteTaskHandler(dbContext);
+            var deleted = await handler.Handle(new DeleteTaskCommand { TaskId = taskId, UserId = userId }, cancellationToken);
+
+            if (!deleted)
+            {
+                return Results.NotFound(new { message = "Task not found or does not belong to the authenticated user." });
+            }
+
+            return Results.NoContent();
         }
         catch (InvalidOperationException ex)
         {
