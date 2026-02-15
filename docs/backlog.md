@@ -1026,6 +1026,7 @@ Build a multi-user, web-based GTD (Getting Things Done) todo application similar
 ---
 
 #### Story 6.1.1: Implement Create and List Projects Endpoints — `5 SP`
+- [x] **COMPLETED**
 
 **Description:** `POST /api/projects` for creation; `GET /api/projects` listing all user projects with computed stats (total tasks, completed tasks, percentage). Sorted by sort order.
 

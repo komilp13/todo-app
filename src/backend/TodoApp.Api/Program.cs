@@ -59,6 +59,7 @@ app.UseAuthorization();
 app.MapHealthEndpoints();
 app.MapAuthEndpoints();
 app.MapTaskEndpoints();
+app.MapProjectEndpoints();
 
 app.Run();
 
