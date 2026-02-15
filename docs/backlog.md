@@ -729,6 +729,7 @@ Build a multi-user, web-based GTD (Getting Things Done) todo application similar
 ---
 
 #### Story 4.3.2: Build Full Task Creation Form — `8 SP`
+- [x] **COMPLETED**
 
 **Description:** Modal dialog with all attribute fields: name, description, due date picker, priority selector, system list dropdown, project dropdown, label multi-select. Opens via button or "Q" keyboard shortcut.
 

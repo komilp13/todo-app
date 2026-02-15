@@ -5,12 +5,19 @@
  * Curated focus list of tasks the user has decided to work on soon.
  */
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { TodoTask, SystemList } from '@/types';
 import TaskList from '@/components/Tasks/TaskList';
+import { useTaskRefresh } from '@/hooks/useTaskRefresh';
 
 export default function NextPage() {
   const [, setSelectedTask] = useState<TodoTask | null>(null);
+  const [refreshCounter, setRefreshCounter] = useState(0);
+
+  // Register refresh callback for this page
+  useTaskRefresh('next', useCallback(() => {
+    setRefreshCounter(prev => prev + 1);
+  }, []));
 
   const handleTaskClick = (task: TodoTask) => {
     setSelectedTask(task);
@@ -34,6 +41,7 @@ export default function NextPage() {
         systemList={SystemList.Next}
         onTaskClick={handleTaskClick}
         onTaskComplete={handleTaskComplete}
+        refresh={refreshCounter}
       />
     </div>
   );

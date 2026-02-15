@@ -4,6 +4,9 @@ import { ReactNode } from 'react';
 import Sidebar from './Sidebar/Sidebar';
 import MainContent from './MainContent';
 import MobileMenuButton from './MobileMenuButton';
+import TaskCreateModal from './Tasks/TaskCreateModal';
+import { useTaskCreateModalContext } from '@/contexts/TaskCreateModalContext';
+import { useTaskCreateModal } from '@/hooks/useTaskCreateModal';
 
 interface AppShellProps {
   children: ReactNode;
@@ -19,6 +22,11 @@ interface AppShellProps {
  * - Mobile (< 1024px): Hidden sidebar with hamburger button toggle
  */
 export default function AppShell({ children }: AppShellProps) {
+  const { isOpen, closeModal } = useTaskCreateModalContext();
+
+  // Initialize keyboard shortcut listener
+  useTaskCreateModal();
+
   return (
     <div className="flex h-screen bg-gray-50">
       {/* Sidebar - Fixed width on desktop, overlay on mobile */}
@@ -34,6 +42,12 @@ export default function AppShell({ children }: AppShellProps) {
           {children}
         </MainContent>
       </div>
+
+      {/* Task Creation Modal - Global, opens via "Q" key or button */}
+      <TaskCreateModal
+        isOpen={isOpen}
+        onClose={closeModal}
+      />
     </div>
   );
 }

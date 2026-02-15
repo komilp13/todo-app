@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import '../styles/globals.css';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { SidebarProvider } from '@/contexts/SidebarContext';
+import { TaskCreateModalProvider } from '@/contexts/TaskCreateModalContext';
+import { TaskRefreshProvider } from '@/contexts/TaskRefreshContext';
 import AuthenticatedLayout from '@/components/AuthenticatedLayout';
 
 export const metadata: Metadata = {
@@ -21,7 +23,11 @@ export default function RootLayout({
       <body className="h-screen overflow-hidden">
         <AuthProvider>
           <SidebarProvider>
-            <AuthenticatedLayout>{children}</AuthenticatedLayout>
+            <TaskCreateModalProvider>
+              <TaskRefreshProvider>
+                <AuthenticatedLayout>{children}</AuthenticatedLayout>
+              </TaskRefreshProvider>
+            </TaskCreateModalProvider>
           </SidebarProvider>
         </AuthProvider>
       </body>

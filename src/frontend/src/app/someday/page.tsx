@@ -5,12 +5,19 @@
  * Deferred tasks using GTD's Someday/Maybe list concept.
  */
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { TodoTask, SystemList } from '@/types';
 import TaskList from '@/components/Tasks/TaskList';
+import { useTaskRefresh } from '@/hooks/useTaskRefresh';
 
 export default function SomedayPage() {
   const [, setSelectedTask] = useState<TodoTask | null>(null);
+  const [refreshCounter, setRefreshCounter] = useState(0);
+
+  // Register refresh callback for this page
+  useTaskRefresh('someday', useCallback(() => {
+    setRefreshCounter(prev => prev + 1);
+  }, []));
 
   const handleTaskClick = (task: TodoTask) => {
     setSelectedTask(task);
@@ -34,6 +41,7 @@ export default function SomedayPage() {
         systemList={SystemList.Someday}
         onTaskClick={handleTaskClick}
         onTaskComplete={handleTaskComplete}
+        refresh={refreshCounter}
       />
     </div>
   );

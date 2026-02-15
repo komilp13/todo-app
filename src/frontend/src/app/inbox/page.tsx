@@ -5,12 +5,19 @@
  * Default entry point for tasks. Shows all tasks in the Inbox system list.
  */
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { TodoTask, SystemList } from '@/types';
 import TaskList from '@/components/Tasks/TaskList';
+import { useTaskRefresh } from '@/hooks/useTaskRefresh';
 
 export default function InboxPage() {
   const [, setSelectedTask] = useState<TodoTask | null>(null);
+  const [refreshCounter, setRefreshCounter] = useState(0);
+
+  // Register refresh callback for this page
+  useTaskRefresh('inbox', useCallback(() => {
+    setRefreshCounter(prev => prev + 1);
+  }, []));
 
   const handleTaskClick = (task: TodoTask) => {
     setSelectedTask(task);
@@ -34,6 +41,7 @@ export default function InboxPage() {
         systemList={SystemList.Inbox}
         onTaskClick={handleTaskClick}
         onTaskComplete={handleTaskComplete}
+        refresh={refreshCounter}
       />
     </div>
   );

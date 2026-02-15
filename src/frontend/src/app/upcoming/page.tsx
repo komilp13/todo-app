@@ -8,7 +8,18 @@
  * This is a placeholder page structure that will be enhanced with
  * date grouping and the TaskList component in future stories.
  */
+
+import { useCallback, useState } from 'react';
+import { useTaskRefresh } from '@/hooks/useTaskRefresh';
+
 export default function UpcomingPage() {
+  const [refreshCounter, setRefreshCounter] = useState(0);
+
+  // Register refresh callback for this page
+  useTaskRefresh('upcoming', useCallback(() => {
+    setRefreshCounter(prev => prev + 1);
+  }, []));
+
   return (
     <div className="space-y-4">
       <div>
