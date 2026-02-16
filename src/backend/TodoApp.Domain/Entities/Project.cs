@@ -86,5 +86,39 @@ public class Project
         };
     }
 
+    public void UpdateName(string name)
+    {
+        Name = name;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void UpdateDescription(string? description)
+    {
+        Description = description;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void UpdateDueDate(DateTime? dueDate)
+    {
+        DueDate = dueDate;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void Complete()
+    {
+        if (Status == ProjectStatus.Completed)
+            return; // Idempotent
+        Status = ProjectStatus.Completed;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void Reopen()
+    {
+        if (Status == ProjectStatus.Active)
+            return; // Idempotent
+        Status = ProjectStatus.Active;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
     private Project() { }
 }

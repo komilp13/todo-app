@@ -179,6 +179,15 @@ public class TodoTask
     }
 
     /// <summary>
+    /// Clear the project association (set projectId to null).
+    /// </summary>
+    public void ClearProject()
+    {
+        ProjectId = null;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    /// <summary>
     /// Update task sort order within its system list.
     /// </summary>
     public void UpdateSortOrder(int sortOrder)

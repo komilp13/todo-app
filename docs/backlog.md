@@ -1041,6 +1041,7 @@ Build a multi-user, web-based GTD (Getting Things Done) todo application similar
 ---
 
 #### Story 6.1.2: Implement Get, Update, Complete, and Delete Project Endpoints — `5 SP`
+- [x] **COMPLETED**
 
 **Description:** Single project retrieval with stats, update, complete/reopen (doesn't affect tasks), delete (orphans tasks by setting projectId to null).
 
