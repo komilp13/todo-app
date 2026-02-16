@@ -41,8 +41,7 @@ public class TodoTaskConfiguration : IEntityTypeConfiguration<TodoTask>
             .HasColumnName("due_date");
 
         builder.Property(x => x.Priority)
-            .HasConversion<int>()
-            .HasDefaultValue(Priority.P4)
+            .HasConversion<int?>()
             .HasColumnName("priority");
 
         builder.Property(x => x.Status)

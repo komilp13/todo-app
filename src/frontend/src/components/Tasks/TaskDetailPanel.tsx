@@ -489,7 +489,7 @@ export default function TaskDetailPanel({
                         <button
                           key={p}
                           type="button"
-                          onClick={() => handleFieldUpdate('priority', p)}
+                          onClick={() => handleFieldUpdate('priority', task.priority === p ? null : p)}
                           className={`px-2 py-1 rounded text-xs font-semibold transition-colors ${
                             task.priority === p
                               ? getPriorityColor(p) + ' text-white'
@@ -514,11 +514,13 @@ export default function TaskDetailPanel({
                       className="text-sm px-2 py-1 border border-gray-300 rounded-md outline-none transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:opacity-60 disabled:cursor-not-allowed"
                       disabled={isSaving || isArchiveView}
                     >
-                      {Object.values(SystemList).map((list) => (
-                        <option key={list} value={list}>
-                          {formatSystemList(list)}
-                        </option>
-                      ))}
+                      {Object.values(SystemList)
+                        .filter((list) => list !== SystemList.Upcoming)
+                        .map((list) => (
+                          <option key={list} value={list}>
+                            {formatSystemList(list)}
+                          </option>
+                        ))}
                     </select>
                   </div>
 

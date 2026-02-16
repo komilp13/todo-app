@@ -23,9 +23,9 @@ public class CreateTaskCommand
     public DateTime? DueDate { get; set; }
 
     /// <summary>
-    /// Task priority level (P1-P4). Defaults to P4.
+    /// Task priority level (P1-P4). Optional, defaults to no priority.
     /// </summary>
-    public Priority Priority { get; set; } = Priority.P4;
+    public Priority? Priority { get; set; }
 
     /// <summary>
     /// GTD system list assignment. Defaults to Inbox.

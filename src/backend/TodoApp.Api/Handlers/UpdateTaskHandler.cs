@@ -60,9 +60,9 @@ public class UpdateTaskHandler
             task.UpdateDescription(command.Description);
         }
 
-        if (command.Priority.HasValue)
+        if (command.HasPriority)
         {
-            task.UpdatePriority(command.Priority.Value);
+            task.UpdatePriority(command.Priority);
         }
 
         if (command.SystemList.HasValue)

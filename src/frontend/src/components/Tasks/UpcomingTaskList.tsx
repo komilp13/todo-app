@@ -25,7 +25,6 @@ interface GroupedTasks {
   today: TodoTask[];
   tomorrow: TodoTask[];
   upcoming: { date: Date; tasks: TodoTask[] }[];
-  noDate: TodoTask[];
 }
 
 export default function UpcomingTaskList({
@@ -71,13 +70,14 @@ export default function UpcomingTaskList({
       today: [],
       tomorrow: [],
       upcoming: [],
-      noDate: [],
     };
 
     // First, sort all tasks by priority within their respective groups
     const sortByPriority = (a: TodoTask, b: TodoTask) => {
-      const priorityOrder = { P1: 1, P2: 2, P3: 3, P4: 4 };
-      return priorityOrder[a.priority] - priorityOrder[b.priority];
+      const priorityOrder: Record<string, number> = { p1: 1, p2: 2, p3: 3, p4: 4 };
+      const aOrder = a.priority ? (priorityOrder[a.priority] ?? 5) : 5;
+      const bOrder = b.priority ? (priorityOrder[b.priority] ?? 5) : 5;
+      return aOrder - bOrder;
     };
 
     // Group tasks
@@ -85,8 +85,7 @@ export default function UpcomingTaskList({
 
     tasks.forEach((task) => {
       if (!task.dueDate) {
-        grouped.noDate.push(task);
-        return;
+        return; // Skip tasks without due dates (shouldn't happen in Upcoming view)
       }
 
       const dueDate = new Date(task.dueDate);
@@ -111,7 +110,6 @@ export default function UpcomingTaskList({
     grouped.overdue.sort(sortByPriority);
     grouped.today.sort(sortByPriority);
     grouped.tomorrow.sort(sortByPriority);
-    grouped.noDate.sort(sortByPriority);
 
     // Convert upcoming dates map to sorted array
     grouped.upcoming = Array.from(upcomingDatesMap.entries())
@@ -238,24 +236,7 @@ export default function UpcomingTaskList({
           </div>
         ))}
 
-        {/* No Date Section */}
-        {groupedTasks.noDate.length > 0 && (
-          <div>
-            <h2 className="text-lg font-semibold text-gray-500 mb-2">
-              No date ({groupedTasks.noDate.length})
-            </h2>
-            <div className="space-y-2">
-              {groupedTasks.noDate.map((task) => (
-                <TaskRow
-                  key={task.id}
-                  task={task}
-                  onClick={onTaskClick}
-                  showSystemList={true}
-                />
-              ))}
-            </div>
-          </div>
-        )}
+
       </div>
       <ToastContainer toasts={toasts} onDismiss={dismiss} />
     </>

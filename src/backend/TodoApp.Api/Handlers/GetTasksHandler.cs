@@ -34,15 +34,13 @@ public class GetTasksHandler
             var now = DateTime.UtcNow;
             var upcomingThreshold = now.AddDays(14);
 
-            // Upcoming view: tasks with due dates within 14 days OR systemList = Upcoming
-            // Only non-archived, open tasks
+            // Upcoming view: only tasks with due dates within 14 days (or overdue)
+            // Upcoming is a computed view — tasks are not manually moved into it
             tasksQuery = tasksQuery.Where(t =>
                 !t.IsArchived &&
                 t.Status == Domain.Enums.TaskStatus.Open &&
-                (
-                    (t.DueDate.HasValue && t.DueDate.Value <= upcomingThreshold) ||
-                    t.SystemList == SystemList.Upcoming
-                )
+                t.DueDate.HasValue &&
+                t.DueDate.Value <= upcomingThreshold
             );
 
             // Sort: overdue first (oldest first), then by due date ascending, then by priority
@@ -57,16 +55,11 @@ public class GetTasksHandler
                 .Include(tl => tl.Label)
                 .ToListAsync(cancellationToken);
 
-            // Sort in-memory with custom logic
-            var sortedUpcomingTasks = upcomingTasks.OrderBy(t =>
-            {
-                // No due date = last
-                if (!t.DueDate.HasValue) return DateTime.MaxValue;
-                // Overdue = comes first, sorted oldest first
-                if (t.DueDate.Value < now) return t.DueDate.Value;
-                // Future dates
-                return t.DueDate.Value;
-            }).ThenBy(t => t.Priority).ToList();
+            // Sort by due date ascending (overdue first), then by priority
+            var sortedUpcomingTasks = upcomingTasks
+                .OrderBy(t => t.DueDate!.Value)
+                .ThenBy(t => t.Priority)
+                .ToList();
 
             // Map to DTOs
             var upcomingTaskDtos = sortedUpcomingTasks.Select(task => new TaskItemDto

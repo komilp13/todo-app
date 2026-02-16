@@ -306,7 +306,8 @@ public static class TaskEndpoints
             UserId = userId,
             HasProjectId = requestBody.ContainsKey("projectId"),
             HasDueDate = requestBody.ContainsKey("dueDate"),
-            HasDescription = requestBody.ContainsKey("description")
+            HasDescription = requestBody.ContainsKey("description"),
+            HasPriority = requestBody.ContainsKey("priority")
         };
 
         // Parse optional fields if provided - handle both string and JsonElement
@@ -351,7 +352,13 @@ public static class TaskEndpoints
                 command.Priority = priority;
                 logger.LogDebug("UpdateTask: Parsed priority field: {Priority}", priority);
             }
-            else if (priorityStr != null)
+            else if (priorityStr == null)
+            {
+                // Explicitly clearing priority
+                command.Priority = null;
+                logger.LogDebug("UpdateTask: Clearing priority field");
+            }
+            else
             {
                 logger.LogWarning("UpdateTask: Failed to parse priority value: {PriorityStr}", priorityStr);
                 context.Response.StatusCode = StatusCodes.Status400BadRequest;

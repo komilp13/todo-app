@@ -61,4 +61,9 @@ public class UpdateTaskCommand
     /// Indicates whether Description was explicitly set (to distinguish between null and not provided).
     /// </summary>
     public bool HasDescription { get; set; }
+
+    /// <summary>
+    /// Indicates whether Priority was explicitly set (to distinguish between null and not provided).
+    /// </summary>
+    public bool HasPriority { get; set; }
 }

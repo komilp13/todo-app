@@ -126,9 +126,9 @@ export default function TaskContextMenu({
     onClose();
   };
 
-  // Get available system lists (exclude current list)
+  // Get available system lists (exclude current list and Upcoming, which is a computed view)
   const availableLists = Object.values(SystemList).filter(
-    (list) => list !== task.systemList
+    (list) => list !== task.systemList && list !== SystemList.Upcoming
   );
 
   // Calculate menu position (ensure it stays within viewport)

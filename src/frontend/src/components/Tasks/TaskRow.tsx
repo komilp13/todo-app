@@ -106,7 +106,7 @@ export default function TaskRow({
     setShowDeleteConfirm(false);
   };
 
-  const priorityColor = getPriorityColor(task.priority);
+  const priorityColor = task.priority ? getPriorityColor(task.priority) : '';
   const relativeDueDate = formatRelativeDate(task.dueDate);
   const isDueOverdue = isOverdue(task.dueDate);
 
@@ -144,14 +144,16 @@ export default function TaskRow({
             {task.name}
           </p>
 
-          {/* Priority Badge */}
-          <div
-            className="inline-flex items-center h-5 px-2 rounded text-xs font-semibold text-white flex-shrink-0"
-            style={{ backgroundColor: priorityColor }}
-            title={`Priority: ${formatPriority(task.priority)}`}
-          >
-            {formatPriority(task.priority)}
-          </div>
+          {/* Priority Badge (only shown when priority is set) */}
+          {task.priority && (
+            <div
+              className="inline-flex items-center h-5 px-2 rounded text-xs font-semibold text-white flex-shrink-0"
+              style={{ backgroundColor: priorityColor }}
+              title={`Priority: ${formatPriority(task.priority)}`}
+            >
+              {formatPriority(task.priority)}
+            </div>
+          )}
         </div>
 
         {/* Metadata row: due date, system list, project, labels */}

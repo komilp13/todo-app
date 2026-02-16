@@ -50,10 +50,10 @@ export default function UpcomingPage() {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
-      // Create task with today's due date in Upcoming system list
+      // Create task in Inbox with today's due date (it will appear in Upcoming via due date)
       await apiClient.post<TodoTask>('/tasks', {
         name: taskName,
-        systemList: SystemList.Upcoming,
+        systemList: SystemList.Inbox,
         dueDate: today.toISOString(),
       });
 
@@ -82,7 +82,7 @@ export default function UpcomingPage() {
         </div>
 
         <QuickAddTaskInput
-          systemList={SystemList.Upcoming}
+          systemList={SystemList.Inbox}
           onTaskCreated={handleQuickAddTask}
           onError={(error) => show(error, { type: 'error' })}
         />

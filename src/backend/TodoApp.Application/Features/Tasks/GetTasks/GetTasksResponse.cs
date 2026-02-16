@@ -44,9 +44,9 @@ public class TaskItemDto
     public DateTime? DueDate { get; set; }
 
     /// <summary>
-    /// Task priority level (P1-P4).
+    /// Task priority level (P1-P4). Null if not set.
     /// </summary>
-    public Priority Priority { get; set; }
+    public Priority? Priority { get; set; }
 
     /// <summary>
     /// Task status (Open or Done).

@@ -27,7 +27,7 @@ interface FormData {
   name: string;
   description: string;
   dueDate: string;
-  priority: Priority;
+  priority: Priority | null;
   systemList: SystemList;
   projectId: string;
   labelIds: string[];
@@ -37,7 +37,7 @@ const INITIAL_FORM_DATA: FormData = {
   name: '',
   description: '',
   dueDate: '',
-  priority: Priority.P4,
+  priority: null,
   systemList: SystemList.Inbox,
   projectId: '',
   labelIds: [],
@@ -177,7 +177,7 @@ export default function TaskCreateModal({
         name: formData.name.trim(),
         description: formData.description.trim() || undefined,
         dueDate: formData.dueDate || undefined,
-        priority: formData.priority,
+        priority: formData.priority || undefined,
         systemList: formData.systemList,
         projectId: formData.projectId || undefined,
       };
@@ -410,7 +410,7 @@ export default function TaskCreateModal({
                   <button
                     key={p}
                     type="button"
-                    onClick={() => setFormData((prev) => ({ ...prev, priority: p }))}
+                    onClick={() => setFormData((prev) => ({ ...prev, priority: prev.priority === p ? null : p }))}
                     disabled={isLoading}
                     className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
                       formData.priority === p

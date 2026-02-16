@@ -24,7 +24,7 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import { TodoTask, SystemList, TaskStatus, Priority } from '@/types';
+import { TodoTask, SystemList, TaskStatus } from '@/types';
 import { apiClient, ApiError } from '@/services/apiClient';
 import { useToast } from '@/hooks/useToast';
 import DraggableTaskRow from './DraggableTaskRow';
@@ -315,7 +315,7 @@ export default function TaskList({
         id: `temp-${Date.now()}`,
         userId: 'temp',
         name: taskName,
-        priority: Priority.P4,
+        priority: null,
         status: TaskStatus.Open,
         systemList,
         sortOrder: 0,

@@ -42,7 +42,7 @@ export interface TodoTask {
   userId: string;
   name: string;
   description?: string;
-  priority: Priority;
+  priority?: Priority | null;
   status: TaskStatus;
   systemList: SystemList;
   sortOrder: number;

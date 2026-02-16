@@ -34,9 +34,9 @@ public class TodoTask
     public DateTime? DueDate { get; private set; }
 
     /// <summary>
-    /// Task priority level (P1-P4).
+    /// Task priority level (P1-P4). Null means no priority set.
     /// </summary>
-    public Priority Priority { get; private set; }
+    public Priority? Priority { get; private set; }
 
     /// <summary>
     /// Task completion status.
@@ -102,7 +102,7 @@ public class TodoTask
         string name,
         string? description = null,
         SystemList systemList = SystemList.Inbox,
-        Priority priority = Priority.P4,
+        Priority? priority = null,
         Guid? projectId = null,
         DateTime? dueDate = null)
     {
@@ -117,7 +117,7 @@ public class TodoTask
             SystemList = systemList,
             SortOrder = 0,
             ProjectId = projectId,
-            DueDate = dueDate,
+            DueDate = dueDate.HasValue ? DateTime.SpecifyKind(dueDate.Value, DateTimeKind.Utc) : null,
             IsArchived = false,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
@@ -145,7 +145,7 @@ public class TodoTask
     /// <summary>
     /// Update task priority.
     /// </summary>
-    public void UpdatePriority(Priority priority)
+    public void UpdatePriority(Priority? priority)
     {
         Priority = priority;
         UpdatedAt = DateTime.UtcNow;
@@ -165,7 +165,7 @@ public class TodoTask
     /// </summary>
     public void UpdateDueDate(DateTime? dueDate)
     {
-        DueDate = dueDate;
+        DueDate = dueDate.HasValue ? DateTime.SpecifyKind(dueDate.Value, DateTimeKind.Utc) : null;
         UpdatedAt = DateTime.UtcNow;
     }
 
