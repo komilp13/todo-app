@@ -60,6 +60,7 @@ app.MapHealthEndpoints();
 app.MapAuthEndpoints();
 app.MapTaskEndpoints();
 app.MapProjectEndpoints();
+app.MapLabelEndpoints();
 
 app.Run();
 

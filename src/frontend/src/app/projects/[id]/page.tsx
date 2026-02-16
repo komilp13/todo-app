@@ -54,6 +54,7 @@ export default function ProjectDetailPage() {
   const [refreshCounter, setRefreshCounter] = useState(0);
   const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set());
   const [showCompleteConfirm, setShowCompleteConfirm] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [editingName, setEditingName] = useState(false);
   const [editingDescription, setEditingDescription] = useState(false);
   const [nameValue, setNameValue] = useState('');
@@ -133,6 +134,18 @@ export default function ProjectDetailPage() {
     } catch (err) {
       console.error('Failed to reopen project:', err);
       show('Failed to reopen project', { type: 'error' });
+    }
+  };
+
+  const handleDeleteProject = async () => {
+    try {
+      await apiClient.delete(`/projects/${projectId}`);
+      triggerRefresh();
+      router.push('/inbox');
+    } catch (err) {
+      console.error('Failed to delete project:', err);
+      show('Failed to delete project', { type: 'error' });
+      setShowDeleteConfirm(false);
     }
   };
 
@@ -335,6 +348,12 @@ export default function ProjectDetailPage() {
                   Complete project
                 </button>
               )}
+              <button
+                onClick={() => setShowDeleteConfirm(true)}
+                className="rounded-lg border border-red-300 px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
+              >
+                Delete
+              </button>
             </div>
           </div>
 
@@ -441,6 +460,17 @@ export default function ProjectDetailPage() {
         title="Complete project"
         message={`Mark "${project.name}" as completed? This will not complete the tasks in the project.`}
         confirmLabel="Complete"
+      />
+
+      {/* Delete Project Confirmation */}
+      <ConfirmationModal
+        isOpen={showDeleteConfirm}
+        onCancel={() => setShowDeleteConfirm(false)}
+        onConfirm={handleDeleteProject}
+        title="Delete project"
+        message={`This will permanently delete "${project.name}". Tasks will not be deleted but will no longer belong to any project.`}
+        confirmLabel="Delete"
+        isDanger
       />
 
       <ToastContainer toasts={toasts} onDismiss={dismiss} />

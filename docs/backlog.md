@@ -1120,6 +1120,7 @@ Build a multi-user, web-based GTD (Getting Things Done) todo application similar
 ---
 
 #### Story 6.2.4: Implement Project Deletion with Confirmation — `3 SP`
+- [x] **COMPLETED**
 
 **Description:** "Delete project" in page header menu. Confirmation dialog explains tasks remain but lose project association. Redirect to Inbox.
 
@@ -1155,6 +1156,7 @@ Build a multi-user, web-based GTD (Getting Things Done) todo application similar
 ---
 
 #### Story 7.1.1: Implement Label CRUD Endpoints — `5 SP`
+- [x] **COMPLETED**
 
 **Description:** Full CRUD: create, list (with task counts), update, delete (cascade). Name unique per user (case-insensitive). Color optional (hex).
 

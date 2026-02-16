@@ -56,5 +56,15 @@ public class Label
         };
     }
 
+    public void UpdateName(string name)
+    {
+        Name = name;
+    }
+
+    public void UpdateColor(string? color)
+    {
+        Color = color;
+    }
+
     private Label() { }
 }
