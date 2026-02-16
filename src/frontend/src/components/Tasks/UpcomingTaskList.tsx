@@ -7,13 +7,21 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
-import { TodoTask, Priority } from '@/types';
+import { useEffect, useState, useRef } from 'react';
+import { TodoTask, TaskStatus } from '@/types';
 import { apiClient, ApiError } from '@/services/apiClient';
 import { useToast } from '@/hooks/useToast';
+import { useTaskRefreshContext } from '@/contexts/TaskRefreshContext';
 import TaskRow from './TaskRow';
 import TaskListSkeleton from './TaskListSkeleton';
 import ToastContainer from '../Toast/ToastContainer';
+
+interface CompletingTask {
+  taskId: string;
+  originalTask: TodoTask;
+  toastId?: string;
+  timeoutId?: NodeJS.Timeout;
+}
 
 interface UpcomingTaskListProps {
   onTaskClick?: (task: TodoTask) => void;
@@ -34,7 +42,10 @@ export default function UpcomingTaskList({
   const [tasks, setTasks] = useState<TodoTask[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [animatingOutTaskIds, setAnimatingOutTaskIds] = useState<Set<string>>(new Set());
+  const completingTasksRef = useRef<Map<string, CompletingTask>>(new Map());
   const { toasts, show, dismiss } = useToast();
+  const { triggerRefresh } = useTaskRefreshContext();
 
   useEffect(() => {
     const fetchUpcomingTasks = async () => {
@@ -57,6 +68,138 @@ export default function UpcomingTaskList({
 
     fetchUpcomingTasks();
   }, [refresh]);
+
+  const handleTaskComplete = async (taskId: string) => {
+    const taskIndex = tasks.findIndex((t) => t.id === taskId);
+    if (taskIndex === -1) return;
+
+    const originalTask = tasks[taskIndex];
+
+    // Optimistically mark as done in UI
+    const optimisticTask: TodoTask = {
+      ...originalTask,
+      status: TaskStatus.Done,
+      isArchived: true,
+    };
+    const newTasks = [...tasks];
+    newTasks[taskIndex] = optimisticTask;
+    setTasks(newTasks);
+
+    try {
+      const { data } = await apiClient.patch<TodoTask>(
+        `/tasks/${taskId}/complete`
+      );
+
+      // Update with API response
+      setTasks((current) => {
+        const updated = [...current];
+        const idx = updated.findIndex((t) => t.id === taskId);
+        if (idx !== -1) updated[idx] = data;
+        return updated;
+      });
+
+      // Refresh sidebar counts
+      triggerRefresh();
+
+      // Track for undo
+      const completingTask: CompletingTask = {
+        taskId,
+        originalTask,
+      };
+      completingTasksRef.current.set(taskId, completingTask);
+
+      // Show undo toast
+      const toastId = show('Task completed', {
+        type: 'success',
+        duration: 5000,
+        action: {
+          label: 'Undo',
+          onClick: () => handleUndo(taskId),
+        },
+      });
+      completingTask.toastId = toastId;
+
+      // Start fade-out animation after 1.5s, then remove from DOM
+      const timeoutId = setTimeout(() => {
+        if (completingTasksRef.current.has(taskId)) {
+          setAnimatingOutTaskIds((prev) => new Set(prev).add(taskId));
+
+          setTimeout(() => {
+            setTasks((current) => current.filter((t) => t.id !== taskId));
+            setAnimatingOutTaskIds((prev) => {
+              const next = new Set(prev);
+              next.delete(taskId);
+              return next;
+            });
+            completingTasksRef.current.delete(taskId);
+          }, 300);
+        }
+      }, 1500);
+
+      completingTask.timeoutId = timeoutId;
+    } catch (err) {
+      // Revert optimistic update
+      setTasks((current) => {
+        const reverted = [...current];
+        const idx = reverted.findIndex((t) => t.id === taskId);
+        if (idx !== -1) {
+          reverted[idx] = originalTask;
+        }
+        return reverted;
+      });
+
+      console.error('Failed to complete task:', err);
+      if (err instanceof ApiError) {
+        show(err.message || 'Failed to complete task', { type: 'error' });
+      } else {
+        show('Failed to complete task', { type: 'error' });
+      }
+    }
+  };
+
+  const handleUndo = async (taskId: string) => {
+    const completingTask = completingTasksRef.current.get(taskId);
+    if (!completingTask) return;
+
+    if (completingTask.timeoutId) {
+      clearTimeout(completingTask.timeoutId);
+    }
+
+    setAnimatingOutTaskIds((prev) => {
+      const next = new Set(prev);
+      next.delete(taskId);
+      return next;
+    });
+
+    try {
+      const { data } = await apiClient.patch<TodoTask>(
+        `/tasks/${taskId}/reopen`
+      );
+
+      setTasks((current) => {
+        const idx = current.findIndex((t) => t.id === taskId);
+        if (idx !== -1) {
+          const updated = [...current];
+          updated[idx] = data;
+          return updated;
+        }
+        // Task was already removed, add it back
+        return [...current, data];
+      });
+
+      show('Task restored', { type: 'success' });
+      triggerRefresh();
+    } catch (err) {
+      console.error('Failed to undo task completion:', err);
+      if (err instanceof ApiError) {
+        show(err.message || 'Failed to restore task', { type: 'error' });
+      } else {
+        show('Failed to restore task', { type: 'error' });
+      }
+    } finally {
+      completingTasksRef.current.delete(taskId);
+    }
+  };
 
   // Group tasks by date
   const groupTasksByDate = (tasks: TodoTask[]): GroupedTasks => {
@@ -171,7 +314,9 @@ export default function UpcomingTaskList({
                 <TaskRow
                   key={task.id}
                   task={task}
+                  onComplete={handleTaskComplete}
                   onClick={onTaskClick}
+                  isAnimatingOut={animatingOutTaskIds.has(task.id)}
                   showSystemList={true}
                 />
               ))}
@@ -190,7 +335,9 @@ export default function UpcomingTaskList({
                 <TaskRow
                   key={task.id}
                   task={task}
+                  onComplete={handleTaskComplete}
                   onClick={onTaskClick}
+                  isAnimatingOut={animatingOutTaskIds.has(task.id)}
                   showSystemList={true}
                 />
               ))}
@@ -209,7 +356,9 @@ export default function UpcomingTaskList({
                 <TaskRow
                   key={task.id}
                   task={task}
+                  onComplete={handleTaskComplete}
                   onClick={onTaskClick}
+                  isAnimatingOut={animatingOutTaskIds.has(task.id)}
                   showSystemList={true}
                 />
               ))}
@@ -228,7 +377,9 @@ export default function UpcomingTaskList({
                 <TaskRow
                   key={task.id}
                   task={task}
+                  onComplete={handleTaskComplete}
                   onClick={onTaskClick}
+                  isAnimatingOut={animatingOutTaskIds.has(task.id)}
                   showSystemList={true}
                 />
               ))}

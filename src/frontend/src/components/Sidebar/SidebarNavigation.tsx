@@ -1,9 +1,11 @@
 'use client';
 
+import { useState, useCallback } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import SystemListItem from './SystemListItem';
 import { useSystemListCounts } from '@/hooks/useSystemListCounts';
+import { useTaskRefresh } from '@/hooks/useTaskRefresh';
 import { SystemList } from '@/types';
 
 interface SidebarNavigationProps {
@@ -17,7 +19,13 @@ interface SidebarNavigationProps {
  */
 export default function SidebarNavigation({ onNavigate }: SidebarNavigationProps) {
   const pathname = usePathname();
-  const { counts, isLoading } = useSystemListCounts();
+  const [refreshCounter, setRefreshCounter] = useState(0);
+  const { counts, isLoading } = useSystemListCounts(refreshCounter);
+
+  // Re-fetch counts whenever any task action triggers a global refresh
+  useTaskRefresh('sidebar-counts', useCallback(() => {
+    setRefreshCounter(prev => prev + 1);
+  }, []));
 
   // Define system lists with their icons
   const systemLists = [
@@ -43,6 +51,7 @@ export default function SidebarNavigation({ onNavigate }: SidebarNavigationProps
               systemList={list}
               icon={icon}
               count={isLoading ? 0 : counts[list] || 0}
+              hideCount={list === SystemList.Upcoming}
               onNavigate={onNavigate}
             />
           ))}

@@ -8,18 +8,14 @@
  */
 
 import { useCallback, useState } from 'react';
-import { TodoTask, SystemList, Priority, TaskStatus } from '@/types';
+import { TodoTask } from '@/types';
 import { useTaskRefresh } from '@/hooks/useTaskRefresh';
-import { useToast } from '@/hooks/useToast';
-import { apiClient, ApiError } from '@/services/apiClient';
 import TaskDetailPanel from '@/components/Tasks/TaskDetailPanel';
 import UpcomingTaskList from '@/components/Tasks/UpcomingTaskList';
-import QuickAddTaskInput from '@/components/Tasks/QuickAddTaskInput';
 
 export default function UpcomingPage() {
   const [refreshCounter, setRefreshCounter] = useState(0);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
-  const { show } = useToast();
 
   // Register refresh callback for this page
   useTaskRefresh('upcoming', useCallback(() => {
@@ -44,33 +40,6 @@ export default function UpcomingPage() {
     setRefreshCounter(prev => prev + 1);
   };
 
-  const handleQuickAddTask = async (taskName: string) => {
-    try {
-      // Get today's date at midnight (local time)
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-
-      // Create task in Inbox with today's due date (it will appear in Upcoming via due date)
-      await apiClient.post<TodoTask>('/tasks', {
-        name: taskName,
-        systemList: SystemList.Inbox,
-        dueDate: today.toISOString(),
-      });
-
-      show('Task created with today\'s due date', { type: 'success' });
-
-      // Refresh the list to show the new task
-      setRefreshCounter(prev => prev + 1);
-    } catch (err) {
-      console.error('Failed to create task:', err);
-      if (err instanceof ApiError) {
-        show(err.message || 'Failed to create task', { type: 'error' });
-      } else {
-        show('Failed to create task', { type: 'error' });
-      }
-    }
-  };
-
   return (
     <>
       <div className="space-y-4">
@@ -80,12 +49,6 @@ export default function UpcomingPage() {
             Tasks coming up. Plan ahead and stay on schedule.
           </p>
         </div>
-
-        <QuickAddTaskInput
-          systemList={SystemList.Inbox}
-          onTaskCreated={handleQuickAddTask}
-          onError={(error) => show(error, { type: 'error' })}
-        />
 
         <UpcomingTaskList
           onTaskClick={handleTaskClick}

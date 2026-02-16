@@ -126,6 +126,8 @@ export default function TaskRow({
         type="checkbox"
         checked={task.status === TaskStatus.Done}
         onChange={handleCheckboxChange}
+        onClick={(e) => e.stopPropagation()}
+        onPointerDown={(e) => e.stopPropagation()}
         className="mt-1 h-5 w-5 cursor-pointer rounded border-gray-300 text-blue-600 focus:ring-blue-500"
         aria-label={`Complete task: ${task.name}`}
       />

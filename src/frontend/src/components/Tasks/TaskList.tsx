@@ -27,6 +27,7 @@ import {
 import { TodoTask, SystemList, TaskStatus } from '@/types';
 import { apiClient, ApiError } from '@/services/apiClient';
 import { useToast } from '@/hooks/useToast';
+import { useTaskRefreshContext } from '@/contexts/TaskRefreshContext';
 import DraggableTaskRow from './DraggableTaskRow';
 import TaskListSkeleton from './TaskListSkeleton';
 import QuickAddTaskInput from './QuickAddTaskInput';
@@ -69,6 +70,7 @@ export default function TaskList({
   const [isReordering, setIsReordering] = useState(false);
   const completingTasksRef = useRef<Map<string, CompletingTask>>(new Map());
   const { toasts, show, dismiss } = useToast();
+  const { triggerRefresh } = useTaskRefreshContext();
 
   // Detect if on mobile (disable drag-drop on mobile or use long-press)
   const [isMobile, setIsMobile] = useState(false);
@@ -146,6 +148,9 @@ export default function TaskList({
         updatedTasks[updatedIndex] = data;
         setTasks(updatedTasks);
       }
+
+      // Refresh sidebar counts
+      triggerRefresh();
 
       // Track this task for completion
       const completingTask: CompletingTask = {
@@ -240,6 +245,7 @@ export default function TaskList({
       setTasks(updatedTasks);
 
       show('Task restored', { type: 'success' });
+      triggerRefresh();
     } catch (err) {
       console.error('Failed to undo task completion:', err);
       if (err instanceof ApiError) {
@@ -253,12 +259,12 @@ export default function TaskList({
   };
 
   const handleTaskMoved = () => {
-    // Notify parent component to refresh
+    triggerRefresh();
     onTaskMoved?.();
   };
 
   const handleTaskDeleted = () => {
-    // Notify parent component to refresh
+    triggerRefresh();
     onTaskDeleted?.();
   };
 
@@ -346,6 +352,7 @@ export default function TaskList({
       );
 
       show('Task created', { type: 'success' });
+      triggerRefresh();
     } catch (err) {
       // Remove optimistic task on failure
       setTasks((currentTasks) =>

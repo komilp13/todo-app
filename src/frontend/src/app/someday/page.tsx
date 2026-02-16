@@ -15,7 +15,7 @@ import { useSystemListCounts } from '@/hooks/useSystemListCounts';
 export default function SomedayPage() {
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [refreshCounter, setRefreshCounter] = useState(0);
-  const { counts, isLoading: isLoadingCounts } = useSystemListCounts();
+  const { counts, isLoading: isLoadingCounts } = useSystemListCounts(refreshCounter);
 
   // Register refresh callback for this page
   useTaskRefresh('someday', useCallback(() => {
