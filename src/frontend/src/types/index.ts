@@ -66,6 +66,25 @@ export interface Project {
   updatedAt: string;
 }
 
+export interface ProjectItem {
+  id: string;
+  name: string;
+  description?: string;
+  dueDate?: string;
+  status: ProjectStatus;
+  sortOrder: number;
+  totalTaskCount: number;
+  completedTaskCount: number;
+  completionPercentage: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface GetProjectsResponse {
+  projects: ProjectItem[];
+  totalCount: number;
+}
+
 export interface Label {
   id: string;
   userId: string;

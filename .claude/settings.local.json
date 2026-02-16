@@ -26,7 +26,8 @@
       "Bash(psql:*)",
       "Bash(dotnet clean:*)",
       "Bash(npm run test:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(npx jest:*)"
     ]
   }
 }

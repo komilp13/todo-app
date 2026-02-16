@@ -4,8 +4,11 @@ import { useState, useCallback } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import SystemListItem from './SystemListItem';
+import ProjectListSection from './ProjectListSection';
 import { useSystemListCounts } from '@/hooks/useSystemListCounts';
+import { useProjects } from '@/hooks/useProjects';
 import { useTaskRefresh } from '@/hooks/useTaskRefresh';
+import { useProjectModalContext } from '@/contexts/ProjectModalContext';
 import { SystemList } from '@/types';
 
 interface SidebarNavigationProps {
@@ -14,13 +17,15 @@ interface SidebarNavigationProps {
 
 /**
  * SidebarNavigation Component
- * Scrollable navigation area with system lists (Inbox, Next, Upcoming, Someday)
- * Each list shows open task count and highlights active list
+ * Scrollable navigation area with system lists (Inbox, Next, Upcoming, Someday),
+ * projects with task counts, and labels placeholder.
  */
 export default function SidebarNavigation({ onNavigate }: SidebarNavigationProps) {
   const pathname = usePathname();
   const [refreshCounter, setRefreshCounter] = useState(0);
   const { counts, isLoading } = useSystemListCounts(refreshCounter);
+  const { projects, isLoading: projectsLoading } = useProjects(refreshCounter);
+  const { openCreateModal } = useProjectModalContext();
 
   // Re-fetch counts whenever any task action triggers a global refresh
   useTaskRefresh('sidebar-counts', useCallback(() => {
@@ -76,16 +81,15 @@ export default function SidebarNavigation({ onNavigate }: SidebarNavigationProps
         </Link>
       </div>
 
-      {/* Future sections: Projects and Labels coming in later stories */}
-      <div className="mt-6 space-y-2">
-        <div className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-          Projects
-        </div>
-        <p className="text-sm text-gray-400">
-          Projects coming soon...
-        </p>
-      </div>
+      {/* Projects Section */}
+      <ProjectListSection
+        projects={projects}
+        isLoading={projectsLoading}
+        onNavigate={onNavigate}
+        onAddProject={openCreateModal}
+      />
 
+      {/* Labels placeholder */}
       <div className="mt-6 space-y-2">
         <div className="text-xs font-semibold uppercase tracking-wide text-gray-500">
           Labels

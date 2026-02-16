@@ -1069,6 +1069,7 @@ Build a multi-user, web-based GTD (Getting Things Done) todo application similar
 ---
 
 #### Story 6.2.1: Add Project List to Sidebar Navigation — `5 SP`
+- [x] **COMPLETED**
 
 **Description:** "Projects" section in sidebar with each project as nav item (name + open task count badge). "+" button for adding. Active projects first, completed in collapsible section.
 
@@ -1085,6 +1086,7 @@ Build a multi-user, web-based GTD (Getting Things Done) todo application similar
 ---
 
 #### Story 6.2.2: Build Project Detail View with Task Grouping — `8 SP`
+- [x] **COMPLETED**
 
 **Description:** Project page at `/projects/{id}` with header (name, description, due date, progress bar), tasks grouped by system list sections (Inbox/Next/Upcoming/Someday). Quick-add assigns to project + Inbox.
 
@@ -1102,6 +1104,7 @@ Build a multi-user, web-based GTD (Getting Things Done) todo application similar
 ---
 
 #### Story 6.2.3: Build Project Create and Edit Modal — `5 SP`
+- [x] **COMPLETED**
 
 **Description:** Modal for creating (from sidebar "+") and editing projects. Fields: name (required), description, due date.
 

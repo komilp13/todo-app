@@ -106,7 +106,7 @@ export default function TaskList({
         const { data } = await apiClient.get<{
           tasks: TodoTask[];
           totalCount: number;
-        }>(`/tasks?systemList=${systemList}`);
+        }>(`/tasks?systemList=${systemList}${projectId ? `&projectId=${projectId}` : ''}`);
         setTasks(data.tasks);
       } catch (err) {
         console.error('Failed to fetch tasks:', err);

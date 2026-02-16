@@ -3,6 +3,7 @@ import '../styles/globals.css';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { SidebarProvider } from '@/contexts/SidebarContext';
 import { TaskCreateModalProvider } from '@/contexts/TaskCreateModalContext';
+import { ProjectModalProvider } from '@/contexts/ProjectModalContext';
 import { TaskRefreshProvider } from '@/contexts/TaskRefreshContext';
 import AuthenticatedLayout from '@/components/AuthenticatedLayout';
 
@@ -24,9 +25,11 @@ export default function RootLayout({
         <AuthProvider>
           <SidebarProvider>
             <TaskCreateModalProvider>
-              <TaskRefreshProvider>
-                <AuthenticatedLayout>{children}</AuthenticatedLayout>
-              </TaskRefreshProvider>
+              <ProjectModalProvider>
+                <TaskRefreshProvider>
+                  <AuthenticatedLayout>{children}</AuthenticatedLayout>
+                </TaskRefreshProvider>
+              </ProjectModalProvider>
             </TaskCreateModalProvider>
           </SidebarProvider>
         </AuthProvider>
