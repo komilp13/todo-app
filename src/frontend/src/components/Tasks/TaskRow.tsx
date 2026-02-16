@@ -16,6 +16,9 @@ import {
 } from '@/utils/dateFormatter';
 import { formatSystemList, formatPriority } from '@/utils/enumFormatter';
 import TaskContextMenu from '@/components/shared/TaskContextMenu';
+import ConfirmationModal from '@/components/shared/ConfirmationModal';
+import { apiClient, ApiError } from '@/services/apiClient';
+import { useToast } from '@/hooks/useToast';
 
 interface TaskRowProps {
   task: TodoTask;
@@ -44,6 +47,9 @@ export default function TaskRow({
 }: TaskRowProps) {
   const [showContextMenu, setShowContextMenu] = useState(false);
   const [contextMenuPosition, setContextMenuPosition] = useState({ x: 0, y: 0 });
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const { show } = useToast();
 
   const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     e.stopPropagation();
@@ -65,6 +71,39 @@ export default function TaskRow({
 
   const handleEdit = () => {
     onClick?.(task);
+  };
+
+  // Delete confirmation handlers - owned by TaskRow so the modal
+  // survives after the context menu is unmounted
+  const handleDeleteRequest = () => {
+    setShowDeleteConfirm(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (isDeleting) return;
+
+    setIsDeleting(true);
+
+    try {
+      await apiClient.delete(`/tasks/${task.id}`);
+
+      show('Task deleted', { type: 'success' });
+      setShowDeleteConfirm(false);
+      onTaskDeleted?.();
+    } catch (err) {
+      console.error('Failed to delete task:', err);
+      if (err instanceof ApiError) {
+        show(err.message || 'Failed to delete task', { type: 'error' });
+      } else {
+        show('Failed to delete task', { type: 'error' });
+      }
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    setShowDeleteConfirm(false);
   };
 
   const priorityColor = getPriorityColor(task.priority);
@@ -170,8 +209,25 @@ export default function TaskRow({
         position={contextMenuPosition}
         onClose={handleCloseContextMenu}
         onTaskMoved={onTaskMoved}
-        onTaskDeleted={onTaskDeleted}
+        onDeleteRequest={handleDeleteRequest}
         onEdit={handleEdit}
+      />,
+      document.body
+    )}
+
+    {/* Delete Confirmation Modal - Rendered independently of context menu
+        so it survives after the context menu is unmounted */}
+    {showDeleteConfirm && typeof window !== 'undefined' && createPortal(
+      <ConfirmationModal
+        isOpen={showDeleteConfirm}
+        title="Delete Task?"
+        message="This action cannot be undone. The task will be permanently deleted."
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        onConfirm={handleDeleteConfirm}
+        onCancel={handleDeleteCancel}
+        isDanger={true}
+        isLoading={isDeleting}
       />,
       document.body
     )}

@@ -61,13 +61,13 @@ export default function ConfirmationModal({
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 z-40 bg-black/15 transition-opacity"
+        className="fixed inset-0 z-[60] bg-black/15 transition-opacity"
         aria-hidden="true"
       />
 
       {/* Modal Container */}
       <div
-        className="fixed inset-0 z-50 flex items-center justify-center p-4"
+        className="fixed inset-0 z-[70] flex items-center justify-center p-4"
         onClick={handleBackdropClick}
       >
         {/* Modal Dialog */}
@@ -77,6 +77,9 @@ export default function ConfirmationModal({
           aria-modal="true"
           aria-labelledby="confirmation-title"
           aria-describedby="confirmation-message"
+          onPointerDown={(e) => e.stopPropagation()}
+          onMouseDown={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
         >
           {/* Modal Content */}
           <div className="p-6">
