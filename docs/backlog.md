@@ -1173,6 +1173,7 @@ Build a multi-user, web-based GTD (Getting Things Done) todo application similar
 ---
 
 #### Story 7.1.2: Implement Task-Label Assignment Endpoints — `3 SP`
+- [x] **COMPLETED**
 
 **Description:** `POST /api/tasks/{taskId}/labels/{labelId}` assigns label; `DELETE` removes. Idempotent. Both task and label must belong to user.
 

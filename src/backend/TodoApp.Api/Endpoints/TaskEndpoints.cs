@@ -5,10 +5,12 @@ using Microsoft.AspNetCore.Mvc;
 using TodoApp.Api.Extensions;
 using TodoApp.Api.Handlers;
 using TodoApp.Api.Utilities;
+using TodoApp.Application.Features.Tasks.AssignLabel;
 using TodoApp.Application.Features.Tasks.CompleteTask;
 using TodoApp.Application.Features.Tasks.CreateTask;
 using TodoApp.Application.Features.Tasks.DeleteTask;
 using TodoApp.Application.Features.Tasks.GetTasks;
+using TodoApp.Application.Features.Tasks.RemoveLabel;
 using TodoApp.Application.Features.Tasks.ReopenTask;
 using TodoApp.Application.Features.Tasks.ReorderTasks;
 using TodoApp.Application.Features.Tasks.UpdateTask;
@@ -88,6 +90,22 @@ public static class TaskEndpoints
             .WithName("DeleteTask")
             .WithOpenApi()
             .Produces(StatusCodes.Status204NoContent)
+            .Produces(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces(StatusCodes.Status404NotFound);
+
+        group.MapPost("/{taskId}/labels/{labelId}", (HttpContext context, string taskId, string labelId, ClaimsPrincipal user, ApplicationDbContext dbContext, CancellationToken cancellationToken) => AssignLabel(context, taskId, labelId, user, dbContext, cancellationToken))
+            .WithName("AssignLabelToTask")
+            .WithOpenApi()
+            .Produces<TaskItemDto>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces(StatusCodes.Status404NotFound);
+
+        group.MapDelete("/{taskId}/labels/{labelId}", (HttpContext context, string taskId, string labelId, ClaimsPrincipal user, ApplicationDbContext dbContext, CancellationToken cancellationToken) => RemoveLabelFromTask(context, taskId, labelId, user, dbContext, cancellationToken))
+            .WithName("RemoveLabelFromTask")
+            .WithOpenApi()
+            .Produces<TaskItemDto>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status401Unauthorized)
             .Produces(StatusCodes.Status404NotFound);
@@ -669,5 +687,105 @@ public static class TaskEndpoints
             context.Response.ContentType = "application/json";
             await context.Response.WriteAsync(json);
         }
+    }
+
+    private static async Task AssignLabel(
+        HttpContext context,
+        string taskId,
+        string labelId,
+        ClaimsPrincipal user,
+        ApplicationDbContext dbContext,
+        CancellationToken cancellationToken)
+    {
+        var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier);
+        if (userIdClaim == null || !Guid.TryParse(userIdClaim.Value, out var userId))
+        {
+            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+            return;
+        }
+
+        if (!Guid.TryParse(taskId, out var parsedTaskId))
+        {
+            context.Response.StatusCode = StatusCodes.Status400BadRequest;
+            var json = JsonSerializer.Serialize(new { errors = new { taskId = new[] { "Task ID must be a valid GUID." } } }, JsonDefaults.CamelCase);
+            context.Response.ContentType = "application/json";
+            await context.Response.WriteAsync(json);
+            return;
+        }
+
+        if (!Guid.TryParse(labelId, out var parsedLabelId))
+        {
+            context.Response.StatusCode = StatusCodes.Status400BadRequest;
+            var json = JsonSerializer.Serialize(new { errors = new { labelId = new[] { "Label ID must be a valid GUID." } } }, JsonDefaults.CamelCase);
+            context.Response.ContentType = "application/json";
+            await context.Response.WriteAsync(json);
+            return;
+        }
+
+        var handler = new AssignLabelHandler(dbContext);
+        var response = await handler.Handle(new AssignLabelCommand { TaskId = parsedTaskId, LabelId = parsedLabelId, UserId = userId }, cancellationToken);
+
+        if (response == null)
+        {
+            context.Response.StatusCode = StatusCodes.Status404NotFound;
+            var json = JsonSerializer.Serialize(new { message = "Task or label not found, or does not belong to the authenticated user." }, JsonDefaults.CamelCase);
+            context.Response.ContentType = "application/json";
+            await context.Response.WriteAsync(json);
+            return;
+        }
+
+        var responseJson = JsonSerializer.Serialize(response, JsonDefaults.CamelCase);
+        context.Response.ContentType = "application/json";
+        await context.Response.WriteAsync(responseJson);
+    }
+
+    private static async Task RemoveLabelFromTask(
+        HttpContext context,
+        string taskId,
+        string labelId,
+        ClaimsPrincipal user,
+        ApplicationDbContext dbContext,
+        CancellationToken cancellationToken)
+    {
+        var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier);
+        if (userIdClaim == null || !Guid.TryParse(userIdClaim.Value, out var userId))
+        {
+            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+            return;
+        }
+
+        if (!Guid.TryParse(taskId, out var parsedTaskId))
+        {
+            context.Response.StatusCode = StatusCodes.Status400BadRequest;
+            var json = JsonSerializer.Serialize(new { errors = new { taskId = new[] { "Task ID must be a valid GUID." } } }, JsonDefaults.CamelCase);
+            context.Response.ContentType = "application/json";
+            await context.Response.WriteAsync(json);
+            return;
+        }
+
+        if (!Guid.TryParse(labelId, out var parsedLabelId))
+        {
+            context.Response.StatusCode = StatusCodes.Status400BadRequest;
+            var json = JsonSerializer.Serialize(new { errors = new { labelId = new[] { "Label ID must be a valid GUID." } } }, JsonDefaults.CamelCase);
+            context.Response.ContentType = "application/json";
+            await context.Response.WriteAsync(json);
+            return;
+        }
+
+        var handler = new RemoveLabelHandler(dbContext);
+        var response = await handler.Handle(new RemoveLabelCommand { TaskId = parsedTaskId, LabelId = parsedLabelId, UserId = userId }, cancellationToken);
+
+        if (response == null)
+        {
+            context.Response.StatusCode = StatusCodes.Status404NotFound;
+            var json = JsonSerializer.Serialize(new { message = "Task or label not found, or does not belong to the authenticated user." }, JsonDefaults.CamelCase);
+            context.Response.ContentType = "application/json";
+            await context.Response.WriteAsync(json);
+            return;
+        }
+
+        var responseJson = JsonSerializer.Serialize(response, JsonDefaults.CamelCase);
+        context.Response.ContentType = "application/json";
+        await context.Response.WriteAsync(responseJson);
     }
 }
