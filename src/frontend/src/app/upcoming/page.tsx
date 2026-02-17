@@ -40,6 +40,10 @@ export default function UpcomingPage() {
     setRefreshCounter(prev => prev + 1);
   };
 
+  const handleTaskUpdated = () => {
+    setRefreshCounter(prev => prev + 1);
+  };
+
   return (
     <>
       <div className="space-y-4">
@@ -61,6 +65,7 @@ export default function UpcomingPage() {
         taskId={selectedTaskId}
         onClose={handleClosePanel}
         onTaskDeleted={handleTaskDeleted}
+        onTaskUpdated={handleTaskUpdated}
         onTaskMoved={handleTaskMoved}
       />
     </>

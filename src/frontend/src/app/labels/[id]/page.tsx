@@ -100,6 +100,11 @@ export default function LabelDetailPage() {
     triggerRefresh();
   };
 
+  const handleTaskUpdated = () => {
+    setRefreshCounter(prev => prev + 1);
+    triggerRefresh();
+  };
+
   const handleDeleteLabel = async () => {
     setIsDeleting(true);
     try {
@@ -273,6 +278,7 @@ export default function LabelDetailPage() {
         taskId={selectedTaskId}
         onClose={handleClosePanel}
         onTaskDeleted={handleTaskChanged}
+        onTaskUpdated={handleTaskUpdated}
         onTaskMoved={handleTaskChanged}
       />
 

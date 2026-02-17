@@ -40,6 +40,10 @@ export default function SomedayPage() {
     setRefreshCounter(prev => prev + 1);
   };
 
+  const handleTaskUpdated = () => {
+    setRefreshCounter(prev => prev + 1);
+  };
+
   const handleTaskComplete = (taskId: string) => {
     // TODO: Call complete endpoint (Story 4.2.2)
   };
@@ -78,6 +82,7 @@ export default function SomedayPage() {
         taskId={selectedTaskId}
         onClose={handleClosePanel}
         onTaskDeleted={handleTaskDeleted}
+        onTaskUpdated={handleTaskUpdated}
         onTaskMoved={handleTaskMoved}
       />
     </>

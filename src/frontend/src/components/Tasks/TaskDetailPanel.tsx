@@ -13,6 +13,7 @@ import { TodoTask, Priority, TaskStatus, SystemList, ProjectStatus } from '@/typ
 import { apiClient, ApiError } from '@/services/apiClient';
 import { useToast } from '@/hooks/useToast';
 import { useProjects } from '@/hooks/useProjects';
+import { useLabels } from '@/hooks/useLabels';
 import { formatSystemList, formatPriority } from '@/utils/enumFormatter';
 import ConfirmationModal from '@/components/shared/ConfirmationModal';
 
@@ -23,6 +24,7 @@ interface TaskDetailPanelProps {
   isArchiveView?: boolean;
   onTaskReopened?: () => void;
   onTaskDeleted?: () => void;
+  onTaskUpdated?: () => void;
   onTaskMoved?: (oldList: SystemList, newList: SystemList) => void;
 }
 
@@ -33,6 +35,7 @@ export default function TaskDetailPanel({
   isArchiveView = false,
   onTaskReopened,
   onTaskDeleted,
+  onTaskUpdated,
   onTaskMoved,
 }: TaskDetailPanelProps) {
   const [task, setTask] = useState<TodoTask | null>(null);
@@ -46,6 +49,7 @@ export default function TaskDetailPanel({
   const panelRef = useRef<HTMLDivElement>(null);
   const { show } = useToast();
   const { projects } = useProjects();
+  const { labels: allLabels } = useLabels();
 
   // Load task data when panel opens or taskId changes
   useEffect(() => {
@@ -228,6 +232,7 @@ export default function TaskDetailPanel({
         }
       } else {
         show('Saved', { type: 'success', duration: 2000 });
+        onTaskUpdated?.();
       }
     } catch (err) {
       // Rollback on error
@@ -238,6 +243,59 @@ export default function TaskDetailPanel({
         err instanceof ApiError ? err.message : 'Failed to save changes';
       show(errorMessage, { type: 'error' });
       console.error('Failed to update task field:', field, err);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleAssignLabel = async (labelId: string) => {
+    if (!task || isSaving || isArchiveView) return;
+
+    const label = allLabels.find((l) => l.id === labelId);
+    if (!label) return;
+
+    // Optimistic update
+    const originalTask = { ...task, labels: [...(task.labels || [])] };
+    setTask({
+      ...task,
+      labels: [...(task.labels || []), { id: label.id, name: label.name, color: label.color }],
+    });
+    setIsSaving(true);
+
+    try {
+      await apiClient.post(`/tasks/${taskId}/labels/${labelId}`);
+      show('Label added', { type: 'success', duration: 2000 });
+      onTaskUpdated?.();
+    } catch (err) {
+      setTask(originalTask);
+      const errorMessage =
+        err instanceof ApiError ? err.message : 'Failed to add label';
+      show(errorMessage, { type: 'error' });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleRemoveLabel = async (labelId: string) => {
+    if (!task || isSaving || isArchiveView) return;
+
+    // Optimistic update
+    const originalTask = { ...task, labels: [...(task.labels || [])] };
+    setTask({
+      ...task,
+      labels: (task.labels || []).filter((l) => l.id !== labelId),
+    });
+    setIsSaving(true);
+
+    try {
+      await apiClient.delete(`/tasks/${taskId}/labels/${labelId}`);
+      show('Label removed', { type: 'success', duration: 2000 });
+      onTaskUpdated?.();
+    } catch (err) {
+      setTask(originalTask);
+      const errorMessage =
+        err instanceof ApiError ? err.message : 'Failed to remove label';
+      show(errorMessage, { type: 'error' });
     } finally {
       setIsSaving(false);
     }
@@ -529,18 +587,23 @@ export default function TaskDetailPanel({
                   {/* Project */}
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-gray-600">Project:</span>
-                    {editingField === 'projectId' && !isArchiveView ? (
+                    {isArchiveView ? (
+                      <span className="text-sm font-medium text-gray-900 p-1 rounded">
+                        {task.projectId ? (
+                          <span className="px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs">
+                            {task.projectName || 'Unknown project'}
+                          </span>
+                        ) : (
+                          <span className="text-gray-400">None</span>
+                        )}
+                      </span>
+                    ) : (
                       <select
-                        autoFocus
-                        value={editValue || ''}
+                        value={task.projectId || ''}
                         onChange={(e) =>
                           handleFieldUpdate('projectId', e.target.value || null)
                         }
-                        onBlur={() => {
-                          setEditingField(null);
-                          setEditValue(null);
-                        }}
-                        className="text-sm px-2 py-1 border border-blue-500 rounded-md focus:ring-2 focus:ring-blue-200 outline-none"
+                        className="text-sm px-2 py-1 border border-gray-300 rounded-md outline-none transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:opacity-60 disabled:cursor-not-allowed"
                         disabled={isSaving}
                       >
                         <option value="">None</option>
@@ -552,28 +615,6 @@ export default function TaskDetailPanel({
                             </option>
                           ))}
                       </select>
-                    ) : (
-                      <span
-                        onClick={() => {
-                          if (!isArchiveView) {
-                            setEditingField('projectId');
-                            setEditValue(task.projectId || '');
-                          }
-                        }}
-                        className={`text-sm font-medium text-gray-900 p-1 rounded ${
-                          isArchiveView
-                            ? ''
-                            : 'cursor-pointer hover:text-blue-600 transition-colors hover:bg-blue-50'
-                        }`}
-                      >
-                        {task.projectId ? (
-                          <span className="px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs">
-                            {task.projectName || 'Unknown project'}
-                          </span>
-                        ) : (
-                          <span className="text-gray-400">None</span>
-                        )}
-                      </span>
                     )}
                   </div>
 
@@ -582,14 +623,65 @@ export default function TaskDetailPanel({
                     <span className="text-sm text-gray-600 block mb-2">
                       Labels:
                     </span>
-                    <div className="flex flex-wrap gap-1">
-                      {/* TODO: Epic 7 - Implement label editing */}
-                      {/* Label multi-select would use: POST /api/tasks/{id}/labels/{labelId} */}
-                      {/* and DELETE /api/tasks/{id}/labels/{labelId} */}
-                      <span className="text-xs text-gray-400">
-                        No labels assigned
-                      </span>
+                    {/* Assigned label chips with remove button */}
+                    <div className="flex flex-wrap gap-1 mb-2">
+                      {task.labels && task.labels.length > 0 ? (
+                        task.labels.map((label) => (
+                          <span
+                            key={label.id}
+                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium text-gray-700"
+                            style={{
+                              backgroundColor: label.color
+                                ? `${label.color}20`
+                                : '#f3f4f6',
+                              borderLeft: `3px solid ${label.color || '#d1d5db'}`,
+                            }}
+                          >
+                            {label.name}
+                            {!isArchiveView && (
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveLabel(label.id)}
+                                disabled={isSaving}
+                                className="ml-0.5 text-gray-400 hover:text-red-500 transition-colors disabled:opacity-50"
+                                aria-label={`Remove label ${label.name}`}
+                              >
+                                &times;
+                              </button>
+                            )}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="text-xs text-gray-400">
+                          No labels assigned
+                        </span>
+                      )}
                     </div>
+                    {/* Dropdown to add a label */}
+                    {!isArchiveView && (
+                      <select
+                        value=""
+                        onChange={(e) => {
+                          if (e.target.value) {
+                            handleAssignLabel(e.target.value);
+                          }
+                        }}
+                        className="text-sm px-2 py-1 border border-gray-300 rounded-md outline-none transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:opacity-60 disabled:cursor-not-allowed w-full"
+                        disabled={isSaving}
+                      >
+                        <option value="">Add a label...</option>
+                        {allLabels
+                          .filter(
+                            (l) =>
+                              !task.labels?.some((tl) => tl.id === l.id)
+                          )
+                          .map((l) => (
+                            <option key={l.id} value={l.id}>
+                              {l.name}
+                            </option>
+                          ))}
+                      </select>
+                    )}
                   </div>
                 </div>
               </div>

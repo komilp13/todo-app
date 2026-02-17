@@ -111,6 +111,11 @@ export default function ProjectDetailPage() {
     triggerRefresh();
   };
 
+  const handleTaskUpdated = () => {
+    setRefreshCounter(prev => prev + 1);
+    triggerRefresh();
+  };
+
   const handleCompleteProject = async () => {
     try {
       await apiClient.patch(`/projects/${projectId}/complete`);
@@ -449,6 +454,7 @@ export default function ProjectDetailPage() {
         taskId={selectedTaskId}
         onClose={handleClosePanel}
         onTaskDeleted={handleTaskChanged}
+        onTaskUpdated={handleTaskUpdated}
         onTaskMoved={handleTaskChanged}
       />
 
