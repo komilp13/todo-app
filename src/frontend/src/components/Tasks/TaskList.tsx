@@ -36,6 +36,7 @@ import ToastContainer from '../Toast/ToastContainer';
 interface TaskListProps {
   systemList: SystemList;
   projectId?: string;
+  labelId?: string;
   onTaskClick?: (task: TodoTask) => void;
   onTaskComplete?: (taskId: string) => void;
   onTaskMoved?: () => void;
@@ -54,6 +55,7 @@ interface CompletingTask {
 export default function TaskList({
   systemList,
   projectId,
+  labelId,
   onTaskClick,
   onTaskComplete,
   onTaskMoved,
@@ -103,10 +105,13 @@ export default function TaskList({
       setError(null);
 
       try {
+        let url = `/tasks?systemList=${systemList}`;
+        if (projectId) url += `&projectId=${projectId}`;
+        if (labelId) url += `&labelId=${labelId}`;
         const { data } = await apiClient.get<{
           tasks: TodoTask[];
           totalCount: number;
-        }>(`/tasks?systemList=${systemList}${projectId ? `&projectId=${projectId}` : ''}`);
+        }>(url);
         setTasks(data.tasks);
       } catch (err) {
         console.error('Failed to fetch tasks:', err);
@@ -343,6 +348,11 @@ export default function TaskList({
           projectId: projectId || undefined,
         }
       );
+
+      // Auto-assign label if in a label view
+      if (labelId) {
+        await apiClient.post(`/tasks/${createdTask.id}/labels/${labelId}`);
+      }
 
       // Replace optimistic task with real task
       setTasks((currentTasks) =>

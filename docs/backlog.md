@@ -1216,6 +1216,7 @@ Build a multi-user, web-based GTD (Getting Things Done) todo application similar
 ---
 
 #### Story 7.2.2: Build Label-Filtered Task View — `5 SP`
+- [x] **COMPLETED**
 
 **Description:** Page at `/labels/{id}` showing all open, non-archived tasks with specified label, grouped by system list. Shows project name per task. Quick-add auto-assigns label.
 
