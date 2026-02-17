@@ -47,6 +47,8 @@ export interface TodoTask {
   systemList: SystemList;
   sortOrder: number;
   projectId?: string;
+  projectName?: string;
+  labels?: { id: string; name: string; color?: string }[];
   isArchived: boolean;
   dueDate?: string;
   completedAt?: string;

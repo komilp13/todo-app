@@ -101,6 +101,22 @@ export default function ArchiveTaskRow({ task, onClick }: ArchiveTaskRowProps) {
           <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-600">
             {formatSystemList(task.systemList)}
           </span>
+
+          {/* Label Chips */}
+          {task.labels?.map((label) => (
+            <span
+              key={label.id}
+              className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium text-gray-700 opacity-60"
+              style={{
+                backgroundColor: label.color
+                  ? `${label.color}20`
+                  : '#f3f4f6',
+                borderLeft: `3px solid ${label.color || '#d1d5db'}`,
+              }}
+            >
+              {label.name}
+            </span>
+          ))}
         </div>
       </div>
     </div>

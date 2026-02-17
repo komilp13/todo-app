@@ -106,6 +106,18 @@ export default function TaskRow({
     setShowDeleteConfirm(false);
   };
 
+  // Derive label data from task.labels when not passed as props
+  const resolvedLabelNames = labelNames.length > 0
+    ? labelNames
+    : (task.labels?.map((l) => l.name) ?? []);
+  const resolvedLabelColors = Object.keys(labelColors).length > 0
+    ? labelColors
+    : Object.fromEntries(
+        (task.labels ?? [])
+          .filter((l) => l.color)
+          .map((l) => [l.name, l.color!])
+      );
+
   const priorityColor = task.priority ? getPriorityColor(task.priority) : '';
   const relativeDueDate = formatRelativeDate(task.dueDate);
   const isDueOverdue = isOverdue(task.dueDate);
@@ -181,22 +193,22 @@ export default function TaskRow({
           )}
 
           {/* Project Chip */}
-          {projectName && (
+          {(projectName || task.projectName) && (
             <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-700">
-              {projectName}
+              {projectName || task.projectName}
             </span>
           )}
 
           {/* Label Chips */}
-          {labelNames.map((labelName) => (
+          {resolvedLabelNames.map((labelName) => (
             <span
               key={labelName}
               className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium text-gray-700"
               style={{
-                backgroundColor: labelColors[labelName]
-                  ? `${labelColors[labelName]}20`
+                backgroundColor: resolvedLabelColors[labelName]
+                  ? `${resolvedLabelColors[labelName]}20`
                   : '#f3f4f6',
-                borderLeft: `3px solid ${labelColors[labelName] || '#d1d5db'}`,
+                borderLeft: `3px solid ${resolvedLabelColors[labelName] || '#d1d5db'}`,
               }}
             >
               {labelName}

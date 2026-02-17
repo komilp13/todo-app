@@ -9,9 +9,10 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
-import { TodoTask, Priority, TaskStatus, SystemList } from '@/types';
+import { TodoTask, Priority, TaskStatus, SystemList, ProjectStatus } from '@/types';
 import { apiClient, ApiError } from '@/services/apiClient';
 import { useToast } from '@/hooks/useToast';
+import { useProjects } from '@/hooks/useProjects';
 import { formatSystemList, formatPriority } from '@/utils/enumFormatter';
 import ConfirmationModal from '@/components/shared/ConfirmationModal';
 
@@ -44,6 +45,7 @@ export default function TaskDetailPanel({
   const [isDeleting, setIsDeleting] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
   const { show } = useToast();
+  const { projects } = useProjects();
 
   // Load task data when panel opens or taskId changes
   useEffect(() => {
@@ -542,8 +544,13 @@ export default function TaskDetailPanel({
                         disabled={isSaving}
                       >
                         <option value="">None</option>
-                        {/* TODO: Fetch projects from API in Epic 6 */}
-                        {/* Projects would be populated here */}
+                        {projects
+                          .filter((p) => p.status === ProjectStatus.Active)
+                          .map((p) => (
+                            <option key={p.id} value={p.id}>
+                              {p.name}
+                            </option>
+                          ))}
                       </select>
                     ) : (
                       <span
@@ -561,7 +568,7 @@ export default function TaskDetailPanel({
                       >
                         {task.projectId ? (
                           <span className="px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs">
-                            Project ID: {task.projectId.slice(0, 8)}...
+                            {task.projectName || 'Unknown project'}
                           </span>
                         ) : (
                           <span className="text-gray-400">None</span>
