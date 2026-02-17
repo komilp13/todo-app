@@ -6,8 +6,10 @@ import { TodoTask, LabelItem, GetLabelsResponse, SystemList } from '@/types';
 import { apiClient, ApiError } from '@/services/apiClient';
 import TaskList from '@/components/Tasks/TaskList';
 import TaskDetailPanel from '@/components/Tasks/TaskDetailPanel';
+import ConfirmationModal from '@/components/shared/ConfirmationModal';
 import { useTaskRefresh } from '@/hooks/useTaskRefresh';
 import { useTaskRefreshContext } from '@/contexts/TaskRefreshContext';
+import { useLabelModalContext } from '@/contexts/LabelModalContext';
 import ToastContainer from '@/components/Toast/ToastContainer';
 import { useToast } from '@/hooks/useToast';
 
@@ -37,8 +39,11 @@ export default function LabelDetailPage() {
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [refreshCounter, setRefreshCounter] = useState(0);
   const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set());
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const { triggerRefresh } = useTaskRefreshContext();
+  const { openEditModal } = useLabelModalContext();
   const { toasts, show, dismiss } = useToast();
 
   // Register refresh callback
@@ -93,6 +98,21 @@ export default function LabelDetailPage() {
     setSelectedTaskId(null);
     setRefreshCounter(prev => prev + 1);
     triggerRefresh();
+  };
+
+  const handleDeleteLabel = async () => {
+    setIsDeleting(true);
+    try {
+      await apiClient.delete(`/labels/${labelId}`);
+      triggerRefresh();
+      router.push('/inbox');
+    } catch (err) {
+      console.error('Failed to delete label:', err);
+      show('Failed to delete label', { type: 'error' });
+      setShowDeleteConfirm(false);
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const toggleSection = (list: string) => {
@@ -154,15 +174,33 @@ export default function LabelDetailPage() {
     <>
       <div className="space-y-6">
         {/* Label Header */}
-        <div className="flex items-center gap-3">
-          <div
-            className="h-4 w-4 rounded-full"
-            style={{ backgroundColor: label.color || '#9ca3af' }}
-          />
-          <h1 className="text-3xl font-bold text-gray-900">{label.name}</h1>
-          <span className="text-sm text-gray-500">
-            {label.taskCount} {label.taskCount === 1 ? 'task' : 'tasks'}
-          </span>
+        <div className="flex items-start justify-between">
+          <div className="flex items-center gap-3">
+            <div
+              className="h-4 w-4 rounded-full"
+              style={{ backgroundColor: label.color || '#9ca3af' }}
+            />
+            <h1 className="text-3xl font-bold text-gray-900">{label.name}</h1>
+            <span className="text-sm text-gray-500">
+              {label.taskCount} {label.taskCount === 1 ? 'task' : 'tasks'}
+            </span>
+          </div>
+
+          {/* Action buttons */}
+          <div className="ml-4 flex items-center gap-2">
+            <button
+              onClick={() => openEditModal({ id: label.id, name: label.name, color: label.color })}
+              className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+            >
+              Edit
+            </button>
+            <button
+              onClick={() => setShowDeleteConfirm(true)}
+              className="rounded-lg border border-red-300 px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
+            >
+              Delete
+            </button>
+          </div>
         </div>
 
         {/* Task Sections grouped by System List */}
@@ -236,6 +274,18 @@ export default function LabelDetailPage() {
         onClose={handleClosePanel}
         onTaskDeleted={handleTaskChanged}
         onTaskMoved={handleTaskChanged}
+      />
+
+      {/* Delete Label Confirmation */}
+      <ConfirmationModal
+        isOpen={showDeleteConfirm}
+        onCancel={() => setShowDeleteConfirm(false)}
+        onConfirm={handleDeleteLabel}
+        title="Delete label"
+        message={`Delete "${label.name}"? This will remove the label from all tasks.`}
+        confirmLabel="Delete"
+        isDanger
+        isLoading={isDeleting}
       />
 
       <ToastContainer toasts={toasts} onDismiss={dismiss} />

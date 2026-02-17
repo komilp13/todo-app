@@ -11,6 +11,7 @@ import { useProjects } from '@/hooks/useProjects';
 import { useLabels } from '@/hooks/useLabels';
 import { useTaskRefresh } from '@/hooks/useTaskRefresh';
 import { useProjectModalContext } from '@/contexts/ProjectModalContext';
+import { useLabelModalContext } from '@/contexts/LabelModalContext';
 import { SystemList } from '@/types';
 
 interface SidebarNavigationProps {
@@ -29,6 +30,7 @@ export default function SidebarNavigation({ onNavigate }: SidebarNavigationProps
   const { projects, isLoading: projectsLoading } = useProjects(refreshCounter);
   const { labels, isLoading: labelsLoading } = useLabels(refreshCounter);
   const { openCreateModal } = useProjectModalContext();
+  const { openCreateModal: openCreateLabelModal } = useLabelModalContext();
 
   // Re-fetch counts whenever any task action triggers a global refresh
   useTaskRefresh('sidebar-counts', useCallback(() => {
@@ -97,6 +99,7 @@ export default function SidebarNavigation({ onNavigate }: SidebarNavigationProps
         labels={labels}
         isLoading={labelsLoading}
         onNavigate={onNavigate}
+        onAddLabel={openCreateLabelModal}
       />
     </nav>
   );

@@ -6,8 +6,10 @@ import MainContent from './MainContent';
 import MobileMenuButton from './MobileMenuButton';
 import TaskCreateModal from './Tasks/TaskCreateModal';
 import ProjectModal from './Projects/ProjectModal';
+import LabelModal from './Labels/LabelModal';
 import { useTaskCreateModalContext } from '@/contexts/TaskCreateModalContext';
 import { useProjectModalContext } from '@/contexts/ProjectModalContext';
+import { useLabelModalContext } from '@/contexts/LabelModalContext';
 import { useTaskCreateModal } from '@/hooks/useTaskCreateModal';
 
 interface AppShellProps {
@@ -26,6 +28,7 @@ interface AppShellProps {
 export default function AppShell({ children }: AppShellProps) {
   const { isOpen, closeModal } = useTaskCreateModalContext();
   const { isOpen: isProjectModalOpen, editingProject, closeModal: closeProjectModal } = useProjectModalContext();
+  const { isOpen: isLabelModalOpen, editingLabel, closeModal: closeLabelModal } = useLabelModalContext();
 
   // Initialize keyboard shortcut listener
   useTaskCreateModal();
@@ -57,6 +60,13 @@ export default function AppShell({ children }: AppShellProps) {
         isOpen={isProjectModalOpen}
         onClose={closeProjectModal}
         editingProject={editingProject}
+      />
+
+      {/* Label Create/Edit Modal */}
+      <LabelModal
+        isOpen={isLabelModalOpen}
+        onClose={closeLabelModal}
+        editingLabel={editingLabel}
       />
     </div>
   );
