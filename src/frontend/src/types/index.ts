@@ -93,6 +93,19 @@ export interface Label {
   createdAt: string;
 }
 
+export interface LabelItem {
+  id: string;
+  name: string;
+  color?: string;
+  taskCount: number;
+  createdAt: string;
+}
+
+export interface GetLabelsResponse {
+  labels: LabelItem[];
+  totalCount: number;
+}
+
 export interface TaskLabel {
   taskId: string;
   labelId: string;

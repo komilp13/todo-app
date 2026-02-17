@@ -1200,6 +1200,7 @@ Build a multi-user, web-based GTD (Getting Things Done) todo application similar
 ---
 
 #### Story 7.2.1: Add Label List to Sidebar Navigation — `3 SP`
+- [x] **COMPLETED**
 
 **Description:** "Labels" section in sidebar. Each label: color dot, name, open task count. "+' button. Click navigates to filtered view.
 

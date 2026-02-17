@@ -5,8 +5,10 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import SystemListItem from './SystemListItem';
 import ProjectListSection from './ProjectListSection';
+import LabelListSection from './LabelListSection';
 import { useSystemListCounts } from '@/hooks/useSystemListCounts';
 import { useProjects } from '@/hooks/useProjects';
+import { useLabels } from '@/hooks/useLabels';
 import { useTaskRefresh } from '@/hooks/useTaskRefresh';
 import { useProjectModalContext } from '@/contexts/ProjectModalContext';
 import { SystemList } from '@/types';
@@ -25,6 +27,7 @@ export default function SidebarNavigation({ onNavigate }: SidebarNavigationProps
   const [refreshCounter, setRefreshCounter] = useState(0);
   const { counts, isLoading } = useSystemListCounts(refreshCounter);
   const { projects, isLoading: projectsLoading } = useProjects(refreshCounter);
+  const { labels, isLoading: labelsLoading } = useLabels(refreshCounter);
   const { openCreateModal } = useProjectModalContext();
 
   // Re-fetch counts whenever any task action triggers a global refresh
@@ -89,15 +92,12 @@ export default function SidebarNavigation({ onNavigate }: SidebarNavigationProps
         onAddProject={openCreateModal}
       />
 
-      {/* Labels placeholder */}
-      <div className="mt-6 space-y-2">
-        <div className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-          Labels
-        </div>
-        <p className="text-sm text-gray-400">
-          Labels coming soon...
-        </p>
-      </div>
+      {/* Labels Section */}
+      <LabelListSection
+        labels={labels}
+        isLoading={labelsLoading}
+        onNavigate={onNavigate}
+      />
     </nav>
   );
 }
